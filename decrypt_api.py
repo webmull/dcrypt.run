@@ -47,18 +47,21 @@ def chaos_roll(team: str):
         chaos_type = random.choice(["delay", "malformed_json", "broken_json", "error_code"])
         CHAOS_EVENTS.setdefault(team, []).append({"ts": current_time(), "type": chaos_type})
 
-        # 💤 Artificial delay chaos
+        # 💤 Artificial delay chaos (scales with time active)
         if chaos_type == "delay":
-            sleep_time = random.uniform(0.5, 2.5)
+            team_info = TEAM_DATA.get(team, {})
+            elapsed_minutes = (current_time() - team_info.get("start_time", current_time())) / 60
+            scale = min(1 + (elapsed_minutes * 0.1), 2.0)
+            sleep_time = random.uniform(0.5, 2.5) * scale
             time.sleep(sleep_time)
-            return None  # continue as normal, just delayed
+            return None  # delayed but valid
 
         # 🪓 Malformed JSON chaos (truncated response)
         if chaos_type == "malformed_json":
             broken_body = '{"word": "spl1t", "pos":'
             return PlainTextResponse(broken_body, media_type="application/json", status_code=200)
 
-        # 💣 Broken JSON chaos (garbled text)
+        # 💣 Broken JSON chaos (completely invalid)
         if chaos_type == "broken_json":
             broken_body = "{not valid json at all"
             return PlainTextResponse(broken_body, media_type="application/json", status_code=200)
@@ -102,11 +105,11 @@ def issue_token(request: Request, team: str = Header(None)):
 # -------------------------------------------------------------
 @app.get("/fragment")
 def get_fragment(request: Request, team: str = Header(None), token: str = Header(None)):
-    """Return a random fragment or a chaos event."""
+    """Return a random fragment or chaos response."""
     if not team or not token:
         raise HTTPException(status_code=400, detail="Missing team or token header")
 
-    # 💥 Random chaos — can cause delays, errors, or malformed responses
+    # 💥 Random chaos — delays, malformed, or broken responses
     chaos_result = chaos_roll(team)
     if chaos_result is not None:
         return chaos_result
