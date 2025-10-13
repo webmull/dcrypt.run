@@ -216,3 +216,16 @@ def custom_openapi():
             description=app.description,
             routes=app.routes,
         )
+
+
+# ---------------------------------------------------------------------
+# HEALTH CHECK (used by DigitalOcean or load balancers)
+# ---------------------------------------------------------------------
+@app.get("/healthz")
+def health_check():
+    """Simple health check endpoint (always returns 200 OK)."""
+    if TEAM_DATA:
+        earliest_start = min((t.get("start_time", time.time()) for t in TEAM_DATA.values()))
+    else:
+        earliest_start = time.time()
+    return {"status": "ok", "uptime": round(time.time() - earliest_start, 2)}
