@@ -102,17 +102,41 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 <header>
 <svg class="title" viewBox="0 0 700 160">
   <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="40">Decrypt the Narrative</text>
+
+  <!-- Connecting Lines -->
   <g class="lines">
-    <line x1="100" y1="110" x2="580" y2="110"/>
+    <line x1="100" y1="110" x2="180" y2="80"/>
+    <line x1="180" y1="80" x2="260" y2="110"/>
+    <line x1="260" y1="110" x2="340" y2="70"/>
+    <line x1="340" y1="70" x2="420" y2="110"/>
+    <line x1="420" y1="110" x2="500" y2="80"/>
+    <line x1="500" y1="80" x2="580" y2="110"/>
   </g>
+
+  <!-- Connection Nodes -->
   <g class="nodes">
-    <circle cx="100" cy="110" r="4"/><circle cx="340" cy="70" r="4"/><circle cx="580" cy="110" r="4"/>
+    <circle cx="100" cy="110" r="4"/>
+    <circle cx="180" cy="80" r="4"/>
+    <circle cx="260" cy="110" r="4"/>
+    <circle cx="340" cy="70" r="4"/>
+    <circle cx="420" cy="110" r="4"/>
+    <circle cx="500" cy="80" r="4"/>
+    <circle cx="580" cy="110" r="4"/>
   </g>
+
+  <!-- Animated Particles -->
   <g class="particles">
-    <circle class="particle" cx="100" cy="110" r="3.8"/><circle class="particle" cx="340" cy="70" r="3.8"/><circle class="particle" cx="580" cy="110" r="3.8"/>
+    <circle class="particle" cx="100" cy="110" r="3.8"/>
+    <circle class="particle" cx="180" cy="80" r="3.8"/>
+    <circle class="particle" cx="260" cy="110" r="3.8"/>
+    <circle class="particle" cx="340" cy="70" r="3.8"/>
+    <circle class="particle" cx="420" cy="110" r="3.8"/>
+    <circle class="particle" cx="500" cy="80" r="3.8"/>
+    <circle class="particle" cx="580" cy="110" r="3.8"/>
   </g>
 </svg>
 </header>
+
 
 <div id="summary">
   <div class="summary-item"><svg class="summary-icon" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="15" cy="9" r="3"/><path d="M4 20a7 7 0 0 1 16 0"/></svg><span>Teams:</span><span class="summary-value" id="count-teams"><b>0</b></span></div>
