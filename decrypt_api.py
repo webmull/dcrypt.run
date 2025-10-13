@@ -41,7 +41,7 @@ FRAGMENTS = [{"word": word, "position": idx} for idx, word in enumerate(WORDS)]
 # AUTHENTICATION
 # ---------------------------------------------------------------------
 @app.post("/auth")
-def issue_token(request: Request, team: str = Header(None)):
+def issue_token(request: Request, team: str = Header(None, convert_underscores=False)):
     if not team:
         raise HTTPException(status_code=400, detail="Missing team header")
 
@@ -112,7 +112,11 @@ def get_status():
 # FRAGMENT RETRIEVAL (with chaos)
 # ---------------------------------------------------------------------
 @app.get("/fragment")
-def get_fragment(request: Request, team: str = Header(None), token: str = Header(None)):
+def get_fragment(
+    request: Request,
+    team: str = Header(None, convert_underscores=False),
+    token: str = Header(None, convert_underscores=False)
+):
     if not team or not token:
         raise HTTPException(status_code=400, detail="Missing team or token header")
 
@@ -169,7 +173,7 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
 # VALIDATE
 # ---------------------------------------------------------------------
 @app.post("/validate")
-def validate_submission(request: Request, team: str = Header(None)):
+def validate_submission(request: Request, team: str = Header(None, convert_underscores=False)):
     """Validate full sentence submission."""
     if not team:
         raise HTTPException(status_code=400, detail="Missing team header")
