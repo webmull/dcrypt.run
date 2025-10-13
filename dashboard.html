@@ -155,7 +155,7 @@ function processBannerQueue(){
 /* === STATUS FETCH === */
 async function fetchStatus(){
   try{
-    const res=await fetch("http://127.0.0.1:8000/status",{cache:"no-store"});
+    const res=await fetch("/status",{cache:"no-store"});
     const data=await res.json();
     const teams=data.teams||[];
     const totalChaos=data.total_chaos||0;
