@@ -8,7 +8,7 @@
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
-      background: #f5f7f5;
+      background: #f6f7f5;
       color: #222;
       display: flex;
       flex-direction: column;
@@ -16,38 +16,32 @@
     }
 
     header {
-      background: linear-gradient(90deg, #00683A, #00A859);
+      background: #00683A;
       color: #fff;
-      padding: 20px 40px;
+      padding: 16px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     }
 
-    h1 {
-      font-size: 1.8em;
+    header h1 {
       margin: 0;
-      letter-spacing: 0.5px;
+      font-size: 1.8em;
+      font-weight: 600;
+      letter-spacing: 0.3px;
     }
 
     .stats {
       display: flex;
       gap: 24px;
       font-size: 1.1em;
-      font-weight: 500;
     }
 
     .stats div {
       display: flex;
       align-items: center;
-      gap: 6px;
-    }
-
-    .stats svg {
-      width: 20px;
-      height: 20px;
-      fill: #fff;
+      gap: 8px;
     }
 
     main {
@@ -58,63 +52,52 @@
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 24px;
       align-content: start;
-      background: #f5f7f5;
     }
 
     .tile {
       background: #fff;
-      border: 1px solid #dcdcdc;
-      border-radius: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
       padding: 18px 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+      transition: box-shadow 0.2s ease;
     }
 
     .tile:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     }
 
     .tile h2 {
       font-size: 1.15em;
-      margin: 0 0 8px;
+      margin: 0 0 10px;
       color: #00683A;
     }
 
     .progress-bar {
       height: 8px;
+      background: #eee;
       border-radius: 4px;
-      background: #e6e6e6;
       overflow: hidden;
       margin-bottom: 10px;
     }
 
     .progress-fill {
       height: 100%;
+      background: linear-gradient(90deg, #00A859, #00c96b);
+      width: 0%;
       transition: width 0.6s ease;
-      background: linear-gradient(90deg, #00A859, #00d172);
     }
 
     .details {
       font-size: 0.9em;
-      display: grid;
-      gap: 4px;
       color: #444;
-    }
-
-    .active-pulse {
-      animation: pulse 1.5s ease;
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(0,168,89,0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(0,168,89,0); }
-      100% { box-shadow: 0 0 0 0 rgba(0,168,89,0); }
+      display: grid;
+      gap: 3px;
     }
 
     @media (max-width: 768px) {
-      h1 { font-size: 1.4em; }
-      .stats { flex-wrap: wrap; font-size: 0.9em; }
+      header h1 { font-size: 1.5em; }
+      .stats { font-size: 0.95em; flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -122,14 +105,8 @@
   <header>
     <h1>Decrypt the Narrative</h1>
     <div class="stats">
-      <div>
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>
-        Teams: <span id="teamCount">0</span>
-      </div>
-      <div>
-        <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
-        Chaos: <span id="chaosCount">0</span>
-      </div>
+      <div>Teams: <span id="teamCount">0</span></div>
+      <div>Chaos: <span id="chaosCount">0</span></div>
     </div>
   </header>
 
@@ -152,18 +129,17 @@
     function updateDashboard(data) {
       if (!data || !data.teams) return;
       const dashboard = document.getElementById("dashboard");
+      dashboard.innerHTML = "";
 
-      // Sort by last_active (most recent first)
-      const sortedTeams = data.teams.sort((a, b) => b.last_active - a.last_active);
-
-      document.getElementById("teamCount").textContent = sortedTeams.length;
+      document.getElementById("teamCount").textContent = data.teams.length;
       document.getElementById("chaosCount").textContent = data.total_chaos ?? 0;
 
-      sortedTeams.forEach(team => {
+      data.teams.forEach(team => {
         const seenPct = Math.min((team.seen_count / data.total_words) * 100, 100);
-        const existing = document.getElementById(`tile-${team.team}`);
+        const tile = document.createElement("div");
+        tile.className = "tile";
 
-        const html = `
+        tile.innerHTML = `
           <h2>${team.team}</h2>
           <div class="progress-bar"><div class="progress-fill" style="width:${seenPct}%"></div></div>
           <div class="details">
@@ -176,24 +152,7 @@
           </div>
         `;
 
-        if (existing) {
-          existing.innerHTML = html;
-          existing.classList.add("active-pulse");
-          setTimeout(() => existing.classList.remove("active-pulse"), 1500);
-        } else {
-          const tile = document.createElement("div");
-          tile.className = "tile";
-          tile.id = `tile-${team.team}`;
-          tile.innerHTML = html;
-          dashboard.appendChild(tile);
-        }
-      });
-
-      // Remove inactive tiles
-      Array.from(dashboard.children).forEach(tile => {
-        if (!sortedTeams.find(t => `tile-${t.team}` === tile.id)) {
-          tile.remove();
-        }
+        dashboard.appendChild(tile);
       });
     }
 
