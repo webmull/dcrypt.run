@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
-import random, time, uuid, os, json
+from fastapi.responses import HTMLResponse, PlainTextResponse
+import random, time, uuid, os
 
 app = FastAPI(title="Decrypt the Narrative API")
 
@@ -47,26 +47,26 @@ def chaos_roll(team: str):
         chaos_type = random.choice(["delay", "malformed_json", "broken_json", "error_code"])
         CHAOS_EVENTS.setdefault(team, []).append({"ts": current_time(), "type": chaos_type})
 
-        # 💤 Artificial delay chaos (scales with time active)
+        # 💤 Artificial delay chaos (scales with activity)
         if chaos_type == "delay":
             team_info = TEAM_DATA.get(team, {})
             elapsed_minutes = (current_time() - team_info.get("start_time", current_time())) / 60
             scale = min(1 + (elapsed_minutes * 0.1), 2.0)
             sleep_time = random.uniform(0.5, 2.5) * scale
             time.sleep(sleep_time)
-            return None  # delayed but valid
+            return None
 
-        # 🪓 Malformed JSON chaos (truncated response)
+        # 🪓 Malformed JSON chaos (truncated)
         if chaos_type == "malformed_json":
             broken_body = '{"word": "spl1t", "pos":'
             return PlainTextResponse(broken_body, media_type="application/json", status_code=200)
 
-        # 💣 Broken JSON chaos (completely invalid)
+        # 💣 Broken JSON chaos (garbled)
         if chaos_type == "broken_json":
             broken_body = "{not valid json at all"
             return PlainTextResponse(broken_body, media_type="application/json", status_code=200)
 
-        # ☕ Standard error chaos
+        # ☕ Error code chaos
         if chaos_type == "error_code":
             raise HTTPException(
                 status_code=random.choice([418, 429, 500, 504]),
@@ -88,12 +88,19 @@ def issue_token(request: Request, team: str = Header(None)):
     now = current_time()
     existing = TEAM_TOKENS.get(team)
 
+    # If still valid, reuse
     if existing and existing["remaining"] > 0:
         existing["timestamp"] = now
         return {"token": existing["token"], "team": team, "remaining": existing["remaining"]}
 
+    # Otherwise issue new token
     token = str(uuid.uuid4())
-    TEAM_TOKENS[team] = {"token": token, "remaining": TOKEN_LIMIT, "max": TOKEN_LIMIT, "timestamp": now}
+    TEAM_TOKENS[team] = {
+        "token": token,
+        "remaining": TOKEN_LIMIT,
+        "max": TOKEN_LIMIT,
+        "timestamp": now
+    }
     data = TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 0})
     data["tokens_issued"] += 1
     data.setdefault("start_time", now)
@@ -109,7 +116,7 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
     if not team or not token:
         raise HTTPException(status_code=400, detail="Missing team or token header")
 
-    # 💥 Random chaos — delays, malformed, or broken responses
+    # 💥 Chaos can strike before validation
     chaos_result = chaos_roll(team)
     if chaos_result is not None:
         return chaos_result
@@ -136,7 +143,7 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
 
 
 # -------------------------------------------------------------
-# Validate Endpoint (no chaos here)
+# Validate Endpoint (no chaos)
 # -------------------------------------------------------------
 @app.post("/validate")
 def validate_submission(request: Request, team: str = Header(None), token: str = Header(None)):
@@ -149,31 +156,34 @@ def validate_submission(request: Request, team: str = Header(None), token: str =
 
     TEAM_DATA.setdefault(team, {}).setdefault("submissions", 0)
     TEAM_DATA[team]["submissions"] += 1
-
     COMPLETED_TEAMS.add(team)
-    TEAM_DATA[team]["completed_time"] = current_time()  # freeze duration
-
+    TEAM_DATA[team]["completed_time"] = current_time()
     return {"team": team, "message": "Validation successful", "completed": True}
 
 
 # -------------------------------------------------------------
-# Status Endpoint
+# Status Endpoint with Cleanup
 # -------------------------------------------------------------
 @app.get("/status")
 def get_status():
     now = current_time()
     teams_out = []
+
+    # 🧹 Clean up idle teams (30+ min inactivity)
+    idle_cutoff = now - IDLE_TIMEOUT
+    to_remove = [team for team, tok in TEAM_TOKENS.items() if tok["timestamp"] < idle_cutoff]
+    for team in to_remove:
+        TEAM_TOKENS.pop(team, None)
+        TEAM_DATA.pop(team, None)
+        CHAOS_EVENTS.pop(team, None)
+        COMPLETED_TEAMS.discard(team)
+
     total_chaos = sum(len(v) for v in CHAOS_EVENTS.values())
 
     for team, token_data in TEAM_TOKENS.items():
-        if now - token_data["timestamp"] > IDLE_TIMEOUT:
-            continue
-
         team_data = TEAM_DATA.get(team, {})
         start = team_data.get("start_time", now)
         completed_time = team_data.get("completed_time")
-
-        # Freeze duration after completion
         duration = (completed_time - start) if completed_time else (now - start)
         chaos_count = len(CHAOS_EVENTS.get(team, []))
 
@@ -196,7 +206,7 @@ def get_status():
 
 
 # -------------------------------------------------------------
-# Serve dashboard
+# Dashboard HTML
 # -------------------------------------------------------------
 @app.get("/dashboard", response_class=HTMLResponse)
 def serve_dashboard():
@@ -208,7 +218,7 @@ def serve_dashboard():
 
 
 # -------------------------------------------------------------
-# Health endpoint
+# Health Check
 # -------------------------------------------------------------
 @app.get("/health")
 def health():
