@@ -13,29 +13,37 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
+      overflow: hidden;
     }
 
+    /* ---- Header ---- */
     header {
-      background: #00683A;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #00683A, #00A859);
       color: #fff;
-      padding: 16px 40px;
+      padding: 24px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
     header h1 {
       margin: 0;
       font-size: 1.8em;
       font-weight: 600;
-      letter-spacing: 0.3px;
+      z-index: 2;
+      position: relative;
+      letter-spacing: 0.5px;
     }
 
     .stats {
       display: flex;
-      gap: 24px;
-      font-size: 1.1em;
+      gap: 28px;
+      font-size: 1.05em;
+      z-index: 2;
+      position: relative;
     }
 
     .stats div {
@@ -44,6 +52,42 @@
       gap: 8px;
     }
 
+    .stats svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+
+    /* Animated particles in header */
+    .particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      animation: float 8s linear infinite;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) scale(0.5);
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-10vh) scale(1);
+        opacity: 0;
+      }
+    }
+
+    /* ---- Main Grid ---- */
     main {
       flex: 1;
       overflow-y: auto;
@@ -56,48 +100,76 @@
 
     .tile {
       background: #fff;
+      border-radius: 12px;
+      padding: 20px;
       border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 18px 20px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-      transition: box-shadow 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .tile:hover {
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
     }
 
     .tile h2 {
-      font-size: 1.15em;
       margin: 0 0 10px;
+      font-size: 1.1em;
       color: #00683A;
+    }
+
+    .status-chip {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 0.8em;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .status-inprogress {
+      background: #00A859;
+    }
+
+    .status-completed {
+      background: #00683A;
     }
 
     .progress-bar {
       height: 8px;
-      background: #eee;
+      background: #e8e8e8;
       border-radius: 4px;
       overflow: hidden;
-      margin-bottom: 10px;
+      margin: 8px 0 12px;
     }
 
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, #00A859, #00c96b);
-      width: 0%;
+      background: linear-gradient(90deg, #00A859, #00d072);
       transition: width 0.6s ease;
     }
 
     .details {
       font-size: 0.9em;
-      color: #444;
       display: grid;
-      gap: 3px;
+      gap: 4px;
+      color: #333;
+    }
+
+    .active-pulse {
+      animation: pulse 1.2s ease;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0,168,89,0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(0,168,89,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,168,89,0); }
     }
 
     @media (max-width: 768px) {
-      header h1 { font-size: 1.5em; }
-      .stats { font-size: 0.95em; flex-wrap: wrap; }
+      header { flex-direction: column; align-items: flex-start; }
+      .stats { flex-wrap: wrap; margin-top: 10px; }
+      header h1 { font-size: 1.4em; }
     }
   </style>
 </head>
@@ -105,9 +177,20 @@
   <header>
     <h1>Decrypt the Narrative</h1>
     <div class="stats">
-      <div>Teams: <span id="teamCount">0</span></div>
-      <div>Chaos: <span id="chaosCount">0</span></div>
+      <div>
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+        Teams: <span id="teamCount">0</span>
+      </div>
+      <div>
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/></svg>
+        Chaos: <span id="chaosCount">0</span>
+      </div>
+      <div>
+        <svg viewBox="0 0 24 24"><path d="M5 3h14v2H5zm0 6h14v2H5zm0 6h14v2H5z"/></svg>
+        Tokens: <span id="tokenCount">0</span>
+      </div>
     </div>
+    <div class="particles" id="particles"></div>
   </header>
 
   <main id="dashboard"></main>
@@ -115,6 +198,19 @@
   <script>
     const DASH_URL = "http://127.0.0.1:8000/status";
     const REFRESH_INTERVAL = 2000;
+
+    // animated background
+    function createParticles() {
+      const container = document.getElementById("particles");
+      for (let i = 0; i < 20; i++) {
+        const p = document.createElement("div");
+        p.className = "particle";
+        p.style.width = p.style.height = `${Math.random() * 6 + 4}px`;
+        p.style.left = `${Math.random() * 100}%`;
+        p.style.animationDuration = `${6 + Math.random() * 4}s`;
+        container.appendChild(p);
+      }
+    }
 
     async function fetchStatus() {
       try {
@@ -129,18 +225,23 @@
     function updateDashboard(data) {
       if (!data || !data.teams) return;
       const dashboard = document.getElementById("dashboard");
-      dashboard.innerHTML = "";
 
-      document.getElementById("teamCount").textContent = data.teams.length;
+      const sortedTeams = data.teams.sort((a, b) => b.last_active - a.last_active);
+      document.getElementById("teamCount").textContent = sortedTeams.length;
       document.getElementById("chaosCount").textContent = data.total_chaos ?? 0;
+      document.getElementById("tokenCount").textContent =
+        sortedTeams.reduce((acc, t) => acc + (t.tokens_issued || 0), 0);
 
-      data.teams.forEach(team => {
+      sortedTeams.forEach(team => {
         const seenPct = Math.min((team.seen_count / data.total_words) * 100, 100);
-        const tile = document.createElement("div");
-        tile.className = "tile";
+        const existing = document.getElementById(`tile-${team.team}`);
 
-        tile.innerHTML = `
-          <h2>${team.team}</h2>
+        const statusChip = team.completed
+          ? `<span class="status-chip status-completed">Completed</span>`
+          : `<span class="status-chip status-inprogress">Active</span>`;
+
+        const html = `
+          <h2>${team.team} ${statusChip}</h2>
           <div class="progress-bar"><div class="progress-fill" style="width:${seenPct}%"></div></div>
           <div class="details">
             <div><strong>Seen:</strong> ${Math.round(seenPct)}%</div>
@@ -148,11 +249,24 @@
             <div><strong>Tokens issued:</strong> ${team.tokens_issued}</div>
             <div><strong>Chaos events:</strong> ${team.chaos}</div>
             <div><strong>Duration:</strong> ${team.duration.toFixed(1)}s</div>
-            <div><strong>Status:</strong> ${team.completed ? "✅ Completed" : "🔄 In Progress"}</div>
           </div>
         `;
 
-        dashboard.appendChild(tile);
+        if (existing) {
+          existing.innerHTML = html;
+          existing.classList.add("active-pulse");
+          setTimeout(() => existing.classList.remove("active-pulse"), 1200);
+        } else {
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          tile.id = `tile-${team.team}`;
+          tile.innerHTML = html;
+          dashboard.appendChild(tile);
+        }
+      });
+
+      Array.from(dashboard.children).forEach(tile => {
+        if (!sortedTeams.find(t => `tile-${t.team}` === tile.id)) tile.remove();
       });
     }
 
@@ -161,6 +275,7 @@
       if (data) updateDashboard(data);
     }
 
+    createParticles();
     setInterval(refresh, REFRESH_INTERVAL);
     refresh();
   </script>
