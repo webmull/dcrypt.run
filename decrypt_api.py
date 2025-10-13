@@ -1,15 +1,12 @@
+# decrypt_api.py
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse
-from fastapi.openapi.utils import get_openapi
-import random, time, uuid, os, yaml
+from fastapi.responses import HTMLResponse
+import random, time, uuid, os, json
 
-app = FastAPI(
-    title="Decrypt the Narrative API",
-    description="An API Challenge of Errors, Tokens, and Twisted Tales.",
-    version="1.0.0",
-)
+app = FastAPI(title="Decrypt the Narrative API")
 
+# --- CORS ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,105 +15,106 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Configuration ---
 TOKEN_LIMIT = 20
 IDLE_TIMEOUT = 1800  # 30 minutes
-
-TEAM_TOKENS = {}   # team -> token dict: {token, remaining, max, timestamp}
-TEAM_DATA = {}     # team -> seen_count, submissions, etc.
-CHAOS_EVENTS = {}  # team -> list of chaos events
-COMPLETED_TEAMS = set()
-
 FULL_TEXT = (
-    "[narrative redacted from history]"
-    "[narrative redacted from history]"
     "[narrative redacted from history]"
     "[narrative redacted from history]"
     "[narrative redacted from history]"
 )
 WORDS = FULL_TEXT.split()
-FRAGMENTS = [{"word": word, "position": idx} for idx, word in enumerate(WORDS)]
+FRAGMENTS = [{"word": w, "position": i} for i, w in enumerate(WORDS)]
 
+# --- State Stores ---
+TEAM_TOKENS = {}       # {team: {"token": str, "remaining": int, "max": int, "timestamp": float}}
+TEAM_DATA = {}         # {team: {"seen_count": int, "submissions": int, "tokens_issued": int, "start_time": float}}
+CHAOS_EVENTS = {}      # {team: [chaos events]}
+COMPLETED_TEAMS = set()
 
-# ---------------------------------------------------------------------
-# AUTHENTICATION
-# ---------------------------------------------------------------------
+# -------------------------------------------------------------
+# Utility
+# -------------------------------------------------------------
+def current_time() -> float:
+    return time.time()
+
+def chaos_roll(team: str):
+    """Simulate chaos with small probability."""
+    if random.random() < 0.05:  # 5% chance
+        CHAOS_EVENTS.setdefault(team, []).append({"ts": current_time(), "type": "chaos"})
+        raise HTTPException(status_code=random.choice([418, 429, 500, 504]), detail="Chaos event triggered")
+
+# -------------------------------------------------------------
+# Auth Endpoint
+# -------------------------------------------------------------
 @app.post("/auth")
-def issue_token(request: Request, team: str = Header(None, convert_underscores=False)):
+def issue_token(request: Request, team: str = Header(None)):
+    """Issue a token or return existing valid one."""
     if not team:
         raise HTTPException(status_code=400, detail="Missing team header")
 
-    now = time.time()
+    now = current_time()
     existing = TEAM_TOKENS.get(team)
 
-    # Return existing active token if still valid
-    if existing and now - existing["timestamp"] < IDLE_TIMEOUT and existing["remaining"] > 0:
+    # reuse valid token
+    if existing and existing["remaining"] > 0:
+        existing["timestamp"] = now
         return {"token": existing["token"], "team": team, "remaining": existing["remaining"]}
 
-    # Generate new token
+    # otherwise issue new one
     token = str(uuid.uuid4())
-    TEAM_TOKENS[team] = {
-        "token": token,
-        "remaining": TOKEN_LIMIT,
-        "max": TOKEN_LIMIT,
-        "timestamp": now
-    }
-
-    team_data = TEAM_DATA.setdefault(team, {
-        "seen_count": 0,
-        "submissions": 0,
-        "tokens_issued": 0,
-        "start_time": now,
-        "duration": 0
-    })
-    team_data["tokens_issued"] += 1
+    TEAM_TOKENS[team] = {"token": token, "remaining": TOKEN_LIMIT, "max": TOKEN_LIMIT, "timestamp": now}
+    data = TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 0})
+    data["tokens_issued"] += 1
+    data.setdefault("start_time", now)
     return {"token": token, "team": team, "remaining": TOKEN_LIMIT}
 
-
-# ---------------------------------------------------------------------
-# STATUS
-# ---------------------------------------------------------------------
-@app.get("/status")
-def get_status():
-    now = time.time()
-    teams = []
-
-    for team, token_data in TEAM_TOKENS.items():
-        if now - token_data["timestamp"] > IDLE_TIMEOUT:
-            continue
-
-        data = TEAM_DATA.get(team, {})
-        duration = now - data.get("start_time", now)
-        chaos_count = len(CHAOS_EVENTS.get(team, []))
-
-        teams.append({
-            "team": team,
-            "seen_count": data.get("seen_count", 0),
-            "submissions": data.get("submissions", 0),
-            "remaining": token_data["remaining"],
-            "tokens_issued": data.get("tokens_issued", 0),
-            "completed": team in COMPLETED_TEAMS,
-            "chaos": chaos_count,
-            "duration": duration,
-        })
-
-    total_chaos = sum(len(v) for v in CHAOS_EVENTS.values())
-
-    return {
-        "teams": teams,
-        "total_chaos": total_chaos,
-        "total_words": len(WORDS),
-    }
-
-
-# ---------------------------------------------------------------------
-# FRAGMENT RETRIEVAL (with chaos)
-# ---------------------------------------------------------------------
+# -------------------------------------------------------------
+# Fragment Endpoint (auto refresh)
+# -------------------------------------------------------------
 @app.get("/fragment")
-def get_fragment(
-    request: Request,
-    team: str = Header(None, convert_underscores=False),
-    token: str = Header(None, convert_underscores=False)
-):
+def get_fragment(request: Request, team: str = Header(None), token: str = Header(None)):
+    """Return a random fragment, applying chaos and auto-refresh logic."""
+    if not team or not token:
+        raise HTTPException(status_code=400, detail="Missing team or token header")
+
+    token_data = TEAM_TOKENS.get(team)
+    now = current_time()
+
+    # --- Token missing or expired from memory ---
+    if not token_data:
+        new_token = str(uuid.uuid4())
+        TEAM_TOKENS[team] = {"token": new_token, "remaining": TOKEN_LIMIT, "max": TOKEN_LIMIT, "timestamp": now}
+        TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 0, "start_time": now})
+        TEAM_DATA[team]["tokens_issued"] += 1
+        raise HTTPException(status_code=401, detail=f"Token expired or reset. New token issued: {new_token}")
+
+    # --- Token mismatch ---
+    if token_data["token"] != token:
+        raise HTTPException(status_code=403, detail="Invalid token for team")
+
+    # --- Out of requests ---
+    if token_data["remaining"] <= 0:
+        raise HTTPException(status_code=403, detail="Token limit reached")
+
+    # Apply chaos chance
+    chaos_roll(team)
+
+    # normal success
+    token_data["remaining"] -= 1
+    token_data["timestamp"] = now
+
+    TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 1, "start_time": now})
+    TEAM_DATA[team]["seen_count"] += 1
+
+    return random.choice(FRAGMENTS)
+
+# -------------------------------------------------------------
+# Validate Endpoint
+# -------------------------------------------------------------
+@app.post("/validate")
+def validate_submission(request: Request, team: str = Header(None), token: str = Header(None)):
+    """Simulate validation of the reconstructed sentence."""
     if not team or not token:
         raise HTTPException(status_code=400, detail="Missing team or token header")
 
@@ -124,112 +122,65 @@ def get_fragment(
     if not token_data or token_data["token"] != token:
         raise HTTPException(status_code=403, detail="Invalid token")
 
-    if token_data["remaining"] <= 0:
-        raise HTTPException(status_code=403, detail="Token expired")
+    TEAM_DATA.setdefault(team, {}).setdefault("submissions", 0)
+    TEAM_DATA[team]["submissions"] += 1
 
-    token_data["remaining"] -= 1
-    token_data["timestamp"] = time.time()
+    # 15% chance of chaos here too
+    if random.random() < 0.15:
+        raise HTTPException(status_code=random.choice([418, 500, 504]), detail="Validation chaos event")
 
-    TEAM_DATA.setdefault(team, {}).setdefault("seen_count", 0)
-    TEAM_DATA[team]["seen_count"] += 1
+    COMPLETED_TEAMS.add(team)
+    return {"team": team, "message": "Validation successful", "completed": True}
 
-    # 🎲 Chaos simulation
-    chaos_chance = random.random()
+# -------------------------------------------------------------
+# Status Endpoint (for dashboard)
+# -------------------------------------------------------------
+@app.get("/status")
+def get_status():
+    now = current_time()
+    teams_out = []
+    total_chaos = sum(len(v) for v in CHAOS_EVENTS.values())
 
-    # 5% - Classic Teapot
-    if chaos_chance < 0.05:
-        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "418"})
-        raise HTTPException(status_code=418, detail="I'm a teapot — chaos mode engaged!")
+    for team, token_data in TEAM_TOKENS.items():
+        if now - token_data["timestamp"] > IDLE_TIMEOUT:
+            continue
 
-    # 10% - Internal Server Error
-    elif chaos_chance < 0.10:
-        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "500"})
-        raise HTTPException(status_code=500, detail="Internal Server Error – chaos simulation.")
+        team_data = TEAM_DATA.get(team, {})
+        duration = now - team_data.get("start_time", now)
+        chaos_count = len(CHAOS_EVENTS.get(team, []))
 
-    # 15% - Artificial Timeout
-    elif chaos_chance < 0.15:
-        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "timeout"})
-        time.sleep(random.uniform(1.5, 3.0))
+        teams_out.append({
+            "team": team,
+            "seen_count": team_data.get("seen_count", 0),
+            "submissions": team_data.get("submissions", 0),
+            "remaining": token_data["remaining"],
+            "completed": team in COMPLETED_TEAMS,
+            "chaos": chaos_count,
+            "tokens_issued": team_data.get("tokens_issued", 1),
+            "duration": duration,
+        })
 
-    # 18% - Broken JSON (corrupted payload)
-    elif chaos_chance < 0.18:
-        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "broken_json"})
-        return PlainTextResponse(
-            '{"word": "corrupt", "position":',
-            status_code=200,
-            media_type="application/json"
-        )
+    return {
+        "teams": teams_out,
+        "total_chaos": total_chaos,
+        "total_words": len(WORDS),
+    }
 
-    # 22% - Random latency jitter (mild delay)
-    elif chaos_chance < 0.22:
-        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "jitter"})
-        time.sleep(random.uniform(0.2, 0.8))
-
-    # Normal behaviour
-    return random.choice(FRAGMENTS)
-
-
-# ---------------------------------------------------------------------
-# VALIDATE
-# ---------------------------------------------------------------------
-@app.post("/validate")
-def validate_submission(request: Request, team: str = Header(None, convert_underscores=False)):
-    """Validate full sentence submission."""
-    if not team:
-        raise HTTPException(status_code=400, detail="Missing team header")
-
-    data = TEAM_DATA.get(team)
-    if not data:
-        raise HTTPException(status_code=404, detail="Unknown team")
-
-    data["submissions"] += 1
-
-    if data.get("seen_count", 0) >= len(WORDS):
-        COMPLETED_TEAMS.add(team)
-        data["duration"] = time.time() - data["start_time"]
-        return {"status": "completed", "team": team, "duration": data["duration"]}
-    return {"status": "incomplete", "team": team}
-
-
-# ---------------------------------------------------------------------
-# DASHBOARD
-# ---------------------------------------------------------------------
+# -------------------------------------------------------------
+# Serve dashboard
+# -------------------------------------------------------------
 @app.get("/dashboard", response_class=HTMLResponse)
 def serve_dashboard():
-    if not os.path.exists("dashboard.html"):
-        raise HTTPException(status_code=404, detail="Dashboard file not found")
-    with open("dashboard.html", "r", encoding="utf-8") as f:
+    """Serve local dashboard file."""
+    path = os.path.join(os.path.dirname(__file__), "dashboard.html")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="dashboard.html not found")
+    with open(path) as f:
         return f.read()
 
-
-# ---------------------------------------------------------------------
-# CUSTOM OPENAPI (LOAD YAML)
-# ---------------------------------------------------------------------
-@app.get("/openapi.json", include_in_schema=False)
-def custom_openapi():
-    """Serve custom YAML spec as JSON for Swagger/Redoc/DigitalOcean."""
-    try:
-        with open("openapi.yaml", "r", encoding="utf-8") as f:
-            custom_spec = yaml.safe_load(f)
-        return custom_spec
-    except Exception:
-        # Fallback to default OpenAPI if YAML not found
-        return get_openapi(
-            title=app.title,
-            version=app.version,
-            description=app.description,
-            routes=app.routes,
-        )
-
-
-# ---------------------------------------------------------------------
-# HEALTH CHECK (used by DigitalOcean or load balancers)
-# ---------------------------------------------------------------------
-@app.get("/healthz")
-def health_check():
-    """Simple health check endpoint (always returns 200 OK)."""
-    if TEAM_DATA:
-        earliest_start = min((t.get("start_time", time.time()) for t in TEAM_DATA.values()))
-    else:
-        earliest_start = time.time()
-    return {"status": "ok", "uptime": round(time.time() - earliest_start, 2)}
+# -------------------------------------------------------------
+# Health endpoint
+# -------------------------------------------------------------
+@app.get("/health")
+def health():
+    return {"ok": True, "uptime": time.time()}
