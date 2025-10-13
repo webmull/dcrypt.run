@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import random, time, uuid
+from fastapi.responses import HTMLResponse
+import random, time, uuid, os
 
 app = FastAPI()
 
@@ -15,9 +16,9 @@ app.add_middleware(
 TOKEN_LIMIT = 20
 IDLE_TIMEOUT = 1800  # 30 minutes
 
-TEAM_TOKENS = {}
-TEAM_DATA = {}
-CHAOS_EVENTS = {}
+TEAM_TOKENS = {}   # team -> token dict: {token, remaining, max, timestamp}
+TEAM_DATA = {}     # team -> seen_count, submissions, etc.
+CHAOS_EVENTS = {}  # team -> list of chaos events
 COMPLETED_TEAMS = set()
 
 FULL_TEXT = (
@@ -27,10 +28,8 @@ FULL_TEXT = (
     "[narrative redacted from history]"
     "[narrative redacted from history]"
 )
-
 WORDS = FULL_TEXT.split()
-FRAGMENTS = [{"word": w, "position": i} for i, w in enumerate(WORDS)]
-
+FRAGMENTS = [{"word": word, "position": idx} for idx, word in enumerate(WORDS)]
 
 @app.post("/auth")
 def issue_token(request: Request, team: str = Header(None)):
@@ -39,9 +38,12 @@ def issue_token(request: Request, team: str = Header(None)):
 
     now = time.time()
     existing = TEAM_TOKENS.get(team)
+
+    # Return existing active token if still valid
     if existing and now - existing["timestamp"] < IDLE_TIMEOUT and existing["remaining"] > 0:
         return {"token": existing["token"], "team": team, "remaining": existing["remaining"]}
 
+    # Generate new token
     token = str(uuid.uuid4())
     TEAM_TOKENS[team] = {
         "token": token,
@@ -50,48 +52,41 @@ def issue_token(request: Request, team: str = Header(None)):
         "timestamp": now
     }
 
-    data = TEAM_DATA.setdefault(team, {
-        "seen_count": 0,
-        "submissions": 0,
-        "tokens_issued": 0,
-        "start_time": now,
-        "duration": 0
-    })
-    data["tokens_issued"] += 1
+    team_data = TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 0, "start_time": now, "duration": 0})
+    team_data["tokens_issued"] += 1
     return {"token": token, "team": team, "remaining": TOKEN_LIMIT}
-
 
 @app.get("/status")
 def get_status():
     now = time.time()
     teams = []
 
-    all_team_names = set(TEAM_TOKENS.keys()) | set(COMPLETED_TEAMS) | set(TEAM_DATA.keys())
-    for team in all_team_names:
-        token_data = TEAM_TOKENS.get(team)
+    for team, token_data in TEAM_TOKENS.items():
+        if now - token_data["timestamp"] > IDLE_TIMEOUT:
+            continue
+
         data = TEAM_DATA.get(team, {})
-
-        seen_count = len(FRAGMENTS) if team in COMPLETED_TEAMS else data.get("seen_count", 0)
-        duration = data.get("duration", 0)
-        if team not in COMPLETED_TEAMS:
-            duration = now - data.get("start_time", now)
-
-        remaining = token_data["remaining"] if token_data else 0
+        duration = now - data.get("start_time", now)
+        chaos_count = len(CHAOS_EVENTS.get(team, []))
 
         teams.append({
             "team": team,
-            "seen_count": seen_count,
+            "seen_count": data.get("seen_count", 0),
             "submissions": data.get("submissions", 0),
-            "remaining": remaining,
-            "completed": team in COMPLETED_TEAMS,
-            "duration": duration,
+            "remaining": token_data["remaining"],
             "tokens_issued": data.get("tokens_issued", 0),
-            "chaos": len(CHAOS_EVENTS.get(team, []))
+            "completed": team in COMPLETED_TEAMS,
+            "chaos": chaos_count,
+            "duration": duration,
         })
 
     total_chaos = sum(len(v) for v in CHAOS_EVENTS.values())
-    return {"teams": teams, "events": CHAOS_EVENTS, "total_words": len(FRAGMENTS), "total_chaos": total_chaos}
 
+    return {
+        "teams": teams,
+        "total_chaos": total_chaos,
+        "total_words": len(WORDS),
+    }
 
 @app.get("/fragment")
 def get_fragment(request: Request, team: str = Header(None), token: str = Header(None)):
@@ -101,57 +96,52 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
     token_data = TEAM_TOKENS.get(team)
     if not token_data or token_data["token"] != token:
         raise HTTPException(status_code=403, detail="Invalid token")
+
     if token_data["remaining"] <= 0:
         raise HTTPException(status_code=403, detail="Token expired")
-
-    # ⚡ Enhanced Chaos
-    chaos_type = random.choices(
-        ["none", "delay", "error", "teapot", "timeout", "throttle", "garbage"],
-        weights=[45, 15, 10, 5, 10, 10, 5],
-        k=1
-    )[0]
-
-    if chaos_type != "none":
-        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": chaos_type})
-        if chaos_type == "delay":
-            time.sleep(random.uniform(0.5, 2.0))
-        elif chaos_type == "error":
-            raise HTTPException(status_code=500, detail="Chaos event: internal server error")
-        elif chaos_type == "teapot":
-            raise HTTPException(status_code=418, detail="Chaos event: I'm a teapot")
-        elif chaos_type == "timeout":
-            time.sleep(random.uniform(3.0, 6.0))
-            raise HTTPException(status_code=504, detail="Chaos event: gateway timeout")
-        elif chaos_type == "throttle":
-            raise HTTPException(status_code=429, detail="Chaos event: too many requests")
-        elif chaos_type == "garbage":
-            return {"word": "###" * random.randint(1, 3), "position": random.randint(-3, 999)}
 
     token_data["remaining"] -= 1
     token_data["timestamp"] = time.time()
 
-    data = TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 1, "start_time": time.time(), "duration": 0})
-    if team not in COMPLETED_TEAMS:
-        data["seen_count"] = min(len(FRAGMENTS), data.get("seen_count", 0) + 1)
-        data["duration"] = time.time() - data.get("start_time", time.time())
+    TEAM_DATA.setdefault(team, {}).setdefault("seen_count", 0)
+    TEAM_DATA[team]["seen_count"] += 1
+
+    # Chaos simulation
+    chaos_chance = random.random()
+    if chaos_chance < 0.05:
+        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "418"})
+        raise HTTPException(status_code=418, detail="I'm a teapot — chaos mode engaged!")
+    elif chaos_chance < 0.10:
+        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "500"})
+        raise HTTPException(status_code=500, detail="Internal Server Error – chaos simulation.")
+    elif chaos_chance < 0.15:
+        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "timeout"})
+        time.sleep(random.uniform(1.5, 3.0))
 
     return random.choice(FRAGMENTS)
 
-
 @app.post("/validate")
-def validate_submission(request: Request, team: str = Header(None), token: str = Header(None)):
-    if not team or not token:
-        raise HTTPException(status_code=400, detail="Missing team or token header")
+def validate_submission(request: Request, team: str = Header(None)):
+    """Validate full sentence submission."""
+    if not team:
+        raise HTTPException(status_code=400, detail="Missing team header")
 
-    token_data = TEAM_TOKENS.get(team)
-    if not token_data or token_data["token"] != token:
-        raise HTTPException(status_code=403, detail="Invalid token")
+    data = TEAM_DATA.get(team)
+    if not data:
+        raise HTTPException(status_code=404, detail="Unknown team")
 
-    TEAM_DATA.setdefault(team, {"submissions": 0})
-    TEAM_DATA[team]["submissions"] += 1
+    data["submissions"] += 1
 
-    COMPLETED_TEAMS.add(team)
-    TEAM_DATA[team]["seen_count"] = len(FRAGMENTS)
-    TEAM_DATA[team]["duration"] = time.time() - TEAM_DATA[team].get("start_time", time.time())
+    if data.get("seen_count", 0) >= len(WORDS):
+        COMPLETED_TEAMS.add(team)
+        data["duration"] = time.time() - data["start_time"]
+        return {"status": "completed", "team": team, "duration": data["duration"]}
+    return {"status": "incomplete", "team": team}
 
-    return {"team": team, "success": True, "message": "Challenge completed successfully!"}
+# 🧭 Serve the dashboard directly
+@app.get("/dashboard", response_class=HTMLResponse)
+def serve_dashboard():
+    if not os.path.exists("dashboard.html"):
+        raise HTTPException(status_code=404, detail="Dashboard file not found")
+    with open("dashboard.html", "r", encoding="utf-8") as f:
+        return f.read()
