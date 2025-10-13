@@ -1,8 +1,7 @@
-# decrypt_api.py
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-import random, time, uuid, os
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+import random, time, uuid, os, json
 
 app = FastAPI(title="Decrypt the Narrative API")
 
@@ -18,7 +17,9 @@ app.add_middleware(
 # --- Configuration ---
 TOKEN_LIMIT = 20
 IDLE_TIMEOUT = 1800  # 30 minutes
+
 FULL_TEXT = (
+    "[narrative redacted from history]"
     "[narrative redacted from history]"
     "[narrative redacted from history]"
     "[narrative redacted from history]"
@@ -32,17 +33,45 @@ TEAM_DATA = {}
 CHAOS_EVENTS = {}
 COMPLETED_TEAMS = set()
 
+
 # -------------------------------------------------------------
 # Utility
 # -------------------------------------------------------------
 def current_time() -> float:
     return time.time()
 
+
 def chaos_roll(team: str):
-    """Simulate random chaos events."""
-    if random.random() < 0.05:
-        CHAOS_EVENTS.setdefault(team, []).append({"ts": current_time(), "type": "chaos"})
-        raise HTTPException(status_code=random.choice([418, 429, 500, 504]), detail="Chaos event triggered")
+    """Inject controlled chaos into /fragment requests."""
+    if random.random() < 0.10:  # ~10% chance overall
+        chaos_type = random.choice(["delay", "malformed_json", "broken_json", "error_code"])
+        CHAOS_EVENTS.setdefault(team, []).append({"ts": current_time(), "type": chaos_type})
+
+        # 💤 Artificial delay chaos
+        if chaos_type == "delay":
+            sleep_time = random.uniform(0.5, 2.5)
+            time.sleep(sleep_time)
+            return None  # continue as normal, just delayed
+
+        # 🪓 Malformed JSON chaos (truncated response)
+        if chaos_type == "malformed_json":
+            broken_body = '{"word": "spl1t", "pos":'
+            return PlainTextResponse(broken_body, media_type="application/json", status_code=200)
+
+        # 💣 Broken JSON chaos (garbled text)
+        if chaos_type == "broken_json":
+            broken_body = "{not valid json at all"
+            return PlainTextResponse(broken_body, media_type="application/json", status_code=200)
+
+        # ☕ Standard error chaos
+        if chaos_type == "error_code":
+            raise HTTPException(
+                status_code=random.choice([418, 429, 500, 504]),
+                detail="Chaos error event triggered"
+            )
+
+    return None
+
 
 # -------------------------------------------------------------
 # Auth Endpoint
@@ -67,19 +96,24 @@ def issue_token(request: Request, team: str = Header(None)):
     data.setdefault("start_time", now)
     return {"token": token, "team": team, "remaining": TOKEN_LIMIT}
 
+
 # -------------------------------------------------------------
-# Fragment Endpoint (no auto-refresh)
+# Fragment Endpoint (Chaos lives here)
 # -------------------------------------------------------------
 @app.get("/fragment")
 def get_fragment(request: Request, team: str = Header(None), token: str = Header(None)):
-    """Return a random fragment or a 401 if the token has expired."""
+    """Return a random fragment or a chaos event."""
     if not team or not token:
         raise HTTPException(status_code=400, detail="Missing team or token header")
+
+    # 💥 Random chaos — can cause delays, errors, or malformed responses
+    chaos_result = chaos_roll(team)
+    if chaos_result is not None:
+        return chaos_result
 
     token_data = TEAM_TOKENS.get(team)
     now = current_time()
 
-    # --- Missing or expired team record ---
     if not token_data or now - token_data["timestamp"] > IDLE_TIMEOUT:
         raise HTTPException(status_code=401, detail="Token expired. Please re-authenticate.")
 
@@ -89,8 +123,6 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
     if token_data["remaining"] <= 0:
         raise HTTPException(status_code=403, detail="Token limit reached")
 
-    chaos_roll(team)
-
     token_data["remaining"] -= 1
     token_data["timestamp"] = now
 
@@ -99,8 +131,9 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
 
     return random.choice(FRAGMENTS)
 
+
 # -------------------------------------------------------------
-# Validate Endpoint
+# Validate Endpoint (no chaos here)
 # -------------------------------------------------------------
 @app.post("/validate")
 def validate_submission(request: Request, team: str = Header(None), token: str = Header(None)):
@@ -114,14 +147,11 @@ def validate_submission(request: Request, team: str = Header(None), token: str =
     TEAM_DATA.setdefault(team, {}).setdefault("submissions", 0)
     TEAM_DATA[team]["submissions"] += 1
 
-    # 15% chaos chance
-    if random.random() < 0.15:
-        raise HTTPException(status_code=random.choice([418, 500, 504]), detail="Validation chaos event")
-
     COMPLETED_TEAMS.add(team)
     TEAM_DATA[team]["completed_time"] = current_time()  # freeze duration
 
     return {"team": team, "message": "Validation successful", "completed": True}
+
 
 # -------------------------------------------------------------
 # Status Endpoint
@@ -161,6 +191,7 @@ def get_status():
         "total_words": len(WORDS),
     }
 
+
 # -------------------------------------------------------------
 # Serve dashboard
 # -------------------------------------------------------------
@@ -171,6 +202,7 @@ def serve_dashboard():
         raise HTTPException(status_code=404, detail="dashboard.html not found")
     with open(path) as f:
         return f.read()
+
 
 # -------------------------------------------------------------
 # Health endpoint
