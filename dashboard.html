@@ -11,43 +11,16 @@ body{
   font-family:'Inter',sans-serif;
   display:flex;flex-direction:column;min-height:100vh;
 }
-
-/* ===== HEADER with PARTICLE TRAIL (larger blobs, tighter spacing) ===== */
-header {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  margin-top:0.8rem;     /* was 1.4rem */
-  margin-bottom:0.5rem;  /* reduced bottom spacing */
-  position:relative;
-}
-header svg.title {
-  width:760px;
-  max-width:95%;
-  height:150px;          /* slightly shorter */
-}
-header text {
-  font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;
-  letter-spacing:3px;fill:#ffda00;
-  filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));
-  animation:textGlow 5s ease-in-out infinite;
-  font-size:40px;
-}
-@keyframes textGlow {
-  0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}
-  50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}
-}
+header{display:flex;justify-content:center;align-items:center;flex-direction:column;margin-top:.8rem;margin-bottom:.5rem;position:relative;}
+header svg.title{width:760px;max-width:95%;height:150px;}
+header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:3px;fill:#ffda00;
+  filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));animation:textGlow 5s ease-in-out infinite;font-size:40px;}
+@keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
 .lines line{stroke:#00cc66;stroke-width:2.5;opacity:.35;}
 .nodes circle{fill:#00cc66;opacity:.9;}
-.particle{
-  fill:#ffda00;
-  opacity:.95;
-  r:3.8; /* larger blobs (was 2) */
-  animation:moveParticle 4s linear infinite;
-}
+.particle{fill:#ffda00;opacity:.95;r:3.8;animation:moveParticle 4s linear infinite;}
 @keyframes moveParticle{
-  0%{transform:translate(0,0) scale(0.8);opacity:0.4;}
+  0%{transform:translate(0,0) scale(0.8);opacity:.4;}
   20%{transform:translate(25px,-10px) scale(1.2);opacity:1;}
   40%{transform:translate(50px,0) scale(1.1);opacity:.9;}
   60%{transform:translate(75px,10px) scale(1);opacity:.8;}
@@ -61,49 +34,31 @@ header text {
 .particle:nth-child(5){animation-delay:1.2s;}
 .particle:nth-child(6){animation-delay:1.5s;}
 .particle:nth-child(7){animation-delay:1.8s;}
-
-/* ===== SUMMARY COUNTS (unchanged) ===== */
-#summary{
-  display:flex;justify-content:center;flex-wrap:wrap;
-  gap:1.4rem;color:#cdeac0;margin:0.6rem auto 1.2rem;text-align:center;
-}
-.summary-item{
-  display:flex;align-items:center;gap:8px;
-  font-size:clamp(1rem,1.9vw,1.4rem);font-weight:600;
-}
-.summary-icon{
-  width:clamp(22px,2.2vw,28px);height:clamp(22px,2.2vw,28px);
-  stroke:#ffda00;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;flex-shrink:0;
-}
-.summary-item span:first-of-type{opacity:0.9;font-weight:500;}
+#summary{display:flex;justify-content:center;flex-wrap:wrap;gap:1.4rem;color:#cdeac0;margin:.6rem auto 1.2rem;text-align:center;}
+.summary-item{display:flex;align-items:center;gap:8px;font-size:clamp(1rem,1.9vw,1.4rem);font-weight:600;}
+.summary-icon{width:clamp(22px,2.2vw,28px);height:clamp(22px,2.2vw,28px);stroke:#ffda00;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;flex-shrink:0;}
+.summary-item span:first-of-type{opacity:.9;font-weight:500;}
 .summary-value b{color:#fff;font-weight:700;text-shadow:0 0 4px rgba(255,255,255,0.2);}
-
-/* ===== TEAM GRID ===== */
 #teams{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:1.2rem;padding:1rem;align-content:start;}
-.team{
-  position:relative;border-radius:18px;overflow:hidden;background:rgba(0,104,55,0.9);
-  backdrop-filter:blur(8px);padding:1.4rem 1.3rem 1.1rem;
+.team{position:relative;border-radius:18px;overflow:hidden;background:rgba(0,104,55,0.9);backdrop-filter:blur(8px);padding:1.4rem 1.3rem 1.1rem;
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 4px 10px rgba(0,0,0,0.25);
-  transition:transform .25s ease, box-shadow .3s ease;
-}
+  transition:transform .25s ease, box-shadow .3s ease;}
 .team:hover{transform:translateY(-2px);}
-.team::after{content:"";position:absolute;top:0;left:0;width:100%;height:6px;background:var(--accent-gradient);background-size:200% 100%;animation:var(--accent-animation);opacity:.95;}
+.team::after{content:"";position:absolute;top:0;left:0;width:100%;height:6px;background:var(--accent-gradient);background-size:200% 100%;
+  animation:var(--accent-animation);opacity:.95;}
 .team.complete{background:rgba(0,122,69,0.95);border:1px solid rgba(0,204,102,0.4);}
 .team.afterglow{box-shadow:0 0 20px 6px rgba(0,255,120,0.7);animation:afterglowFade 2.5s ease-out forwards;}
 @keyframes afterglowFade{0%{box-shadow:0 0 25px 8px rgba(0,255,120,0.9);}100%{box-shadow:0 0 0 0 rgba(0,255,120,0);}}
 @keyframes accentShimmer{0%{background-position:0 0;}100%{background-position:200% 0;}}
 @keyframes accentPulse{0%,100%{opacity:1;}50%{opacity:.7;}}
-
-/* ===== STATUS CHIP ===== */
 .team-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;}
 .team h2{margin:0;font-size:1.35rem;color:#ffda00;letter-spacing:.4px;}
-.status-chip{padding:4px 10px;border-radius:6px;font-size:.85rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px;background:rgba(255,255,255,0.08);transition:all .3s ease;}
+.status-chip{padding:4px 10px;border-radius:6px;font-size:.85rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px;
+  background:rgba(255,255,255,0.08);transition:all .3s ease;}
 .status-chip.active{color:#00ff99;}
 .status-chip.validating{color:#ffda00;background:rgba(255,218,0,0.15);box-shadow:0 0 6px rgba(255,218,0,0.4);animation:chipPulse 1.3s ease-in-out infinite;}
 .status-chip.completed{color:#fff;background:rgba(0,204,102,0.25);box-shadow:0 0 8px rgba(0,204,102,0.5);}
 @keyframes chipPulse{0%,100%{box-shadow:0 0 6px rgba(255,218,0,0.3);}50%{box-shadow:0 0 12px rgba(255,218,0,0.7);}}
-
-/* ===== METRICS ===== */
 .metric-group{background:rgba(255,255,255,0.04);border-radius:10px;padding:.8rem .8rem;display:grid;grid-template-columns:1fr 1fr;row-gap:6px;column-gap:8px;font-size:1rem;}
 .metric-label{opacity:.9;display:flex;align-items:center;gap:8px;white-space:nowrap;}
 .metric-value{text-align:right;font-weight:600;font-size:1rem;}
@@ -112,6 +67,34 @@ header text {
 .bar-fill{height:100%;transition:width .3s ease;}
 .bar-fill.validating{background:linear-gradient(270deg,#ffda00,#ff9900,#ffda00);background-size:200% 100%;animation:shimmer 1.5s linear infinite;}
 @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* 🎉 Center Banner */
+#completion-banner {
+  position: fixed;
+  top: 50%;left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,75,43,0.95);
+  color: #ffda00;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 700;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(255,218,0,0.6);
+  opacity: 0;
+  z-index: 9999;
+  pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+#completion-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.05);
+  animation: bannerPulse 0.8s ease-in-out 2 alternate;
+}
+@keyframes bannerPulse {
+  0% { box-shadow: 0 0 15px rgba(255,218,0,0.6); }
+  100% { box-shadow: 0 0 35px rgba(0,255,120,0.8); }
+}
 </style>
 </head>
 <body>
@@ -120,21 +103,13 @@ header text {
 <svg class="title" viewBox="0 0 700 160">
   <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="40">Decrypt the Narrative</text>
   <g class="lines">
-    <line x1="100" y1="110" x2="180" y2="80"/>
-    <line x1="180" y1="80" x2="260" y2="110"/>
-    <line x1="260" y1="110" x2="340" y2="70"/>
-    <line x1="340" y1="70" x2="420" y2="110"/>
-    <line x1="420" y1="110" x2="500" y2="80"/>
-    <line x1="500" y1="80" x2="580" y2="110"/>
+    <line x1="100" y1="110" x2="580" y2="110"/>
   </g>
   <g class="nodes">
-    <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
-    <circle cx="340" cy="70" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
+    <circle cx="100" cy="110" r="4"/><circle cx="340" cy="70" r="4"/><circle cx="580" cy="110" r="4"/>
   </g>
   <g class="particles">
-    <circle class="particle" cx="100" cy="110" r="3.8"/><circle class="particle" cx="180" cy="80" r="3.8"/>
-    <circle class="particle" cx="260" cy="110" r="3.8"/><circle class="particle" cx="340" cy="70" r="3.8"/>
-    <circle class="particle" cx="420" cy="110" r="3.8"/><circle class="particle" cx="500" cy="80" r="3.8"/><circle class="particle" cx="580" cy="110" r="3.8"/>
+    <circle class="particle" cx="100" cy="110" r="3.8"/><circle class="particle" cx="340" cy="70" r="3.8"/><circle class="particle" cx="580" cy="110" r="3.8"/>
   </g>
 </svg>
 </header>
@@ -148,18 +123,42 @@ header text {
 
 <div id="teams"></div>
 
+<!-- 🎉 Central Completion Banner -->
+<div id="completion-banner"></div>
+
 <script>
-let completedTeams=new Set(),totalWords=null,confettiActive=false;
+let completedTeams = new Set(), confettiActive = false;
+let bannerQueue = [];
+let bannerShowing = false;
+
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
+
+/* === Banner Queue === */
+function showCompletionBanner(teamName) {
+  bannerQueue.push(teamName);
+  processBannerQueue();
+}
+function processBannerQueue(){
+  if(bannerShowing || bannerQueue.length===0) return;
+  bannerShowing = true;
+  const teamName = bannerQueue.shift();
+  const banner = document.getElementById("completion-banner");
+  banner.innerText = `🎉 ${teamName} has completed the challenge! 🎉`;
+  banner.classList.add("show");
+  setTimeout(()=>{
+    banner.classList.remove("show");
+    bannerShowing=false;
+    setTimeout(processBannerQueue,500);
+  },4000);
+}
 
 /* === STATUS FETCH === */
 async function fetchStatus(){
   try{
-    const res=await fetch("/status",{cache:"no-store"});
+    const res=await fetch("http://127.0.0.1:8000/status",{cache:"no-store"});
     const data=await res.json();
     const teams=data.teams||[];
     const totalChaos=data.total_chaos||0;
-    if(data.total_words) totalWords=data.total_words;
     const totalTokens=teams.reduce((s,t)=>s+(t.tokens_issued||0),0);
     const totalCompleted=teams.filter(t=>t.completed).length;
 
@@ -169,6 +168,9 @@ async function fetchStatus(){
     document.getElementById("count-completed").innerHTML=`<b>${totalCompleted}</b>`;
 
     const container=document.getElementById("teams");container.innerHTML="";
+    teams.sort((a,b)=>b.seen_count-a.seen_count);
+    const totalWords=data.total_words||50;
+
     teams.forEach(team=>{
       const seenPercent=totalWords?Math.min((team.seen_count/totalWords)*100,100):0;
       const remainingPercent=Math.min((team.remaining/20)*100,100);
@@ -201,11 +203,13 @@ async function fetchStatus(){
           <div class="metric-value">${duration}</div>
         </div>`;
       container.appendChild(card);
-      if(team.completed&&!completedTeams.has(team.team)){
+
+      if(team.completed && !completedTeams.has(team.team)){
         completedTeams.add(team.team);
         card.classList.add("afterglow");
         setTimeout(()=>card.classList.remove("afterglow"),2500);
         launchConfettiForTile(card,team.duration||0);
+        showCompletionBanner(team.team);
       }
     });
   }catch(e){console.error(e);}
