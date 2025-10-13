@@ -39,6 +39,7 @@ def current_time() -> float:
     return time.time()
 
 def chaos_roll(team: str):
+    """Simulate random chaos events."""
     if random.random() < 0.05:
         CHAOS_EVENTS.setdefault(team, []).append({"ts": current_time(), "type": "chaos"})
         raise HTTPException(status_code=random.choice([418, 429, 500, 504]), detail="Chaos event triggered")
@@ -48,6 +49,7 @@ def chaos_roll(team: str):
 # -------------------------------------------------------------
 @app.post("/auth")
 def issue_token(request: Request, team: str = Header(None)):
+    """Issue a token or return existing valid one."""
     if not team:
         raise HTTPException(status_code=400, detail="Missing team header")
 
@@ -66,23 +68,20 @@ def issue_token(request: Request, team: str = Header(None)):
     return {"token": token, "team": team, "remaining": TOKEN_LIMIT}
 
 # -------------------------------------------------------------
-# Fragment Endpoint (auto refresh)
+# Fragment Endpoint (no auto-refresh)
 # -------------------------------------------------------------
 @app.get("/fragment")
 def get_fragment(request: Request, team: str = Header(None), token: str = Header(None)):
+    """Return a random fragment or a 401 if the token has expired."""
     if not team or not token:
         raise HTTPException(status_code=400, detail="Missing team or token header")
 
     token_data = TEAM_TOKENS.get(team)
     now = current_time()
 
-    # --- Token missing or expired ---
-    if not token_data:
-        new_token = str(uuid.uuid4())
-        TEAM_TOKENS[team] = {"token": new_token, "remaining": TOKEN_LIMIT, "max": TOKEN_LIMIT, "timestamp": now}
-        TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 0, "start_time": now})
-        TEAM_DATA[team]["tokens_issued"] += 1
-        raise HTTPException(status_code=401, detail=f"Token expired or reset. New token issued: {new_token}")
+    # --- Missing or expired team record ---
+    if not token_data or now - token_data["timestamp"] > IDLE_TIMEOUT:
+        raise HTTPException(status_code=401, detail="Token expired. Please re-authenticate.")
 
     if token_data["token"] != token:
         raise HTTPException(status_code=403, detail="Invalid token for team")
@@ -115,13 +114,12 @@ def validate_submission(request: Request, team: str = Header(None), token: str =
     TEAM_DATA.setdefault(team, {}).setdefault("submissions", 0)
     TEAM_DATA[team]["submissions"] += 1
 
+    # 15% chaos chance
     if random.random() < 0.15:
         raise HTTPException(status_code=random.choice([418, 500, 504]), detail="Validation chaos event")
 
     COMPLETED_TEAMS.add(team)
-
-    # 🟢 NEW: Freeze completion time when validated
-    TEAM_DATA[team]["completed_time"] = current_time()
+    TEAM_DATA[team]["completed_time"] = current_time()  # freeze duration
 
     return {"team": team, "message": "Validation successful", "completed": True}
 
@@ -142,12 +140,8 @@ def get_status():
         start = team_data.get("start_time", now)
         completed_time = team_data.get("completed_time")
 
-        # 🟢 NEW: Use frozen completion duration if completed
-        if completed_time:
-            duration = completed_time - start
-        else:
-            duration = now - start
-
+        # Freeze duration after completion
+        duration = (completed_time - start) if completed_time else (now - start)
         chaos_count = len(CHAOS_EVENTS.get(team, []))
 
         teams_out.append({
