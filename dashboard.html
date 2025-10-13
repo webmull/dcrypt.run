@@ -8,82 +8,83 @@
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
-      background: #0b0d0f;
-      color: #e2e2e2;
+      background: #f5f7f5;
+      color: #222;
       display: flex;
       flex-direction: column;
       height: 100vh;
-      overflow: hidden;
     }
 
     header {
+      background: linear-gradient(90deg, #00683A, #00A859);
+      color: #fff;
       padding: 20px 40px;
-      background: linear-gradient(90deg, #0f1215, #1b1e22);
-      border-bottom: 2px solid #1e4d2b;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
     h1 {
       font-size: 1.8em;
-      color: #00ff91;
       margin: 0;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
     .stats {
       display: flex;
-      gap: 20px;
+      gap: 24px;
       font-size: 1.1em;
+      font-weight: 500;
     }
 
     .stats div {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
-    .icon {
+    .stats svg {
       width: 20px;
       height: 20px;
-      fill: #00ff91;
+      fill: #fff;
     }
 
     main {
       flex: 1;
       overflow-y: auto;
-      padding: 20px 40px;
+      padding: 30px 40px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
       align-content: start;
+      background: #f5f7f5;
     }
 
     .tile {
-      background: #121416;
-      border: 1px solid #1f2429;
-      border-radius: 14px;
-      padding: 18px;
-      transition: transform 0.2s ease, box-shadow 0.3s ease;
-      position: relative;
+      background: #fff;
+      border: 1px solid #dcdcdc;
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .tile:hover {
       transform: translateY(-3px);
-      box-shadow: 0 0 10px rgba(0, 255, 145, 0.2);
+      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
     }
 
     .tile h2 {
-      font-size: 1.1em;
-      margin: 0 0 10px 0;
-      color: #00ff91;
+      font-size: 1.15em;
+      margin: 0 0 8px;
+      color: #00683A;
     }
 
     .progress-bar {
       height: 8px;
       border-radius: 4px;
-      background: #1f2429;
+      background: #e6e6e6;
       overflow: hidden;
       margin-bottom: 10px;
     }
@@ -91,14 +92,14 @@
     .progress-fill {
       height: 100%;
       transition: width 0.6s ease;
-      background: linear-gradient(90deg, #00ff91, #00b36b);
+      background: linear-gradient(90deg, #00A859, #00d172);
     }
 
     .details {
       font-size: 0.9em;
       display: grid;
       gap: 4px;
-      color: #cfd0d1;
+      color: #444;
     }
 
     .active-pulse {
@@ -106,9 +107,9 @@
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(0,255,100,0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(0,255,100,0); }
-      100% { box-shadow: 0 0 0 0 rgba(0,255,100,0); }
+      0% { box-shadow: 0 0 0 0 rgba(0,168,89,0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(0,168,89,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,168,89,0); }
     }
 
     @media (max-width: 768px) {
@@ -121,10 +122,17 @@
   <header>
     <h1>Decrypt the Narrative</h1>
     <div class="stats">
-      <div><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>Teams: <span id="teamCount">0</span></div>
-      <div><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>Chaos: <span id="chaosCount">0</span></div>
+      <div>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>
+        Teams: <span id="teamCount">0</span>
+      </div>
+      <div>
+        <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+        Chaos: <span id="chaosCount">0</span>
+      </div>
     </div>
   </header>
+
   <main id="dashboard"></main>
 
   <script>
@@ -145,7 +153,7 @@
       if (!data || !data.teams) return;
       const dashboard = document.getElementById("dashboard");
 
-      // sort by last_active desc
+      // Sort by last_active (most recent first)
       const sortedTeams = data.teams.sort((a, b) => b.last_active - a.last_active);
 
       document.getElementById("teamCount").textContent = sortedTeams.length;
@@ -159,12 +167,12 @@
           <h2>${team.team}</h2>
           <div class="progress-bar"><div class="progress-fill" style="width:${seenPct}%"></div></div>
           <div class="details">
-            <div>Seen: ${Math.round(seenPct)}%</div>
-            <div>Requests left: ${team.remaining}</div>
-            <div>Tokens issued: ${team.tokens_issued}</div>
-            <div>Chaos events: ${team.chaos}</div>
-            <div>Duration: ${team.duration.toFixed(1)}s</div>
-            <div>Status: ${team.completed ? "✅ Completed" : "🔄 In Progress"}</div>
+            <div><strong>Seen:</strong> ${Math.round(seenPct)}%</div>
+            <div><strong>Requests left:</strong> ${team.remaining}</div>
+            <div><strong>Tokens issued:</strong> ${team.tokens_issued}</div>
+            <div><strong>Chaos events:</strong> ${team.chaos}</div>
+            <div><strong>Duration:</strong> ${team.duration.toFixed(1)}s</div>
+            <div><strong>Status:</strong> ${team.completed ? "✅ Completed" : "🔄 In Progress"}</div>
           </div>
         `;
 
@@ -181,9 +189,8 @@
         }
       });
 
-      // remove tiles not in new data
-      const existingTiles = Array.from(dashboard.children);
-      existingTiles.forEach(tile => {
+      // Remove inactive tiles
+      Array.from(dashboard.children).forEach(tile => {
         if (!sortedTeams.find(t => `tile-${t.team}` === tile.id)) {
           tile.remove();
         }
