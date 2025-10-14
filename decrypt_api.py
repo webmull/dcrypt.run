@@ -85,6 +85,9 @@ def issue_token(request: Request, team: str = Header(None)):
     if not team:
         raise HTTPException(status_code=400, detail="Missing team header")
 
+    if len(team_name) > 20:
+        raise HTTPException(status_code=400, detail="Team name too long (max 20 characters)")
+
     now = current_time()
     existing = TEAM_TOKENS.get(team)
 
