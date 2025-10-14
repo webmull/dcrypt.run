@@ -146,20 +146,40 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
 # Validate Endpoint (no chaos)
 # -------------------------------------------------------------
 @app.post("/validate")
-def validate_submission(request: Request, team: str = Header(None), token: str = Header(None)):
+async def validate_submission(request: Request, team: str = Header(None), token: str = Header(None)):
+    """Validate a team's submitted sentence against the canonical full text."""
     if not team or not token:
         raise HTTPException(status_code=400, detail="Missing team or token header")
 
     token_data = TEAM_TOKENS.get(team)
     if not token_data or token_data["token"] != token:
-        raise HTTPException(status_code=403, detail="Invalid token")
+        raise HTTPException(status_code=403, detail="Invalid or expired token")
 
-    TEAM_DATA.setdefault(team, {}).setdefault("submissions", 0)
-    TEAM_DATA[team]["submissions"] += 1
+    body = await request.json()
+    submitted_text = body.get("submission")
+    if not submitted_text:
+        raise HTTPException(status_code=400, detail="Missing submission")
+
+    # Normalize both sides: remove punctuation, lowercase, collapse spaces
+    normalize = lambda s: re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
+    canonical = normalize(FULL_TEXT)
+    submission_clean = normalize(submitted_text)
+
+    if submission_clean != canonical:
+        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "invalid_submission"})
+        raise HTTPException(status_code=400, detail="Incorrect submission")
+
+    # ✅ Mark completion and record timing
+    TEAM_DATA.setdefault(team, {}).setdefault("completed_time", time.time())
     COMPLETED_TEAMS.add(team)
-    TEAM_DATA[team]["completed_time"] = current_time()
-    return {"team": team, "message": "Validation successful", "completed": True}
 
+    return {
+        "team": team,
+        "status": "success",
+        "message": "Correct submission! Challenge complete.",
+        "completed_at": TEAM_DATA[team]["completed_time"],
+        "duration": TEAM_DATA[team]["completed_time"] - TEAM_DATA[team]["start_time"]
+    }
 
 # -------------------------------------------------------------
 # Status Endpoint with Cleanup
