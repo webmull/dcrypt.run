@@ -2,8 +2,6 @@ openapi: 3.1.0
 info:
   title: Decrypt the Narrative API
   version: 1.2.0
-servers:
-  - url: /
 paths:
   /auth:
     post:
