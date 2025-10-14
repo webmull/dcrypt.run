@@ -6,20 +6,70 @@
 <title>Decrypt the Narrative – Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-body{
-  margin:0;background:#004b2b;color:#f7f7f7;
-  font-family:'Inter',sans-serif;
-  display:flex;flex-direction:column;min-height:100vh;
+html, body {
+  image-rendering: -webkit-optimize-contrast;
+  text-rendering: geometricPrecision;
 }
-header{display:flex;justify-content:center;align-items:center;flex-direction:column;margin-top:.8rem;margin-bottom:.5rem;position:relative;}
-header svg.title{width:760px;max-width:95%;height:150px;}
-header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:3px;fill:#ffda00;
-  filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));animation:textGlow 5s ease-in-out infinite;font-size:40px;}
-@keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
-.lines line{stroke:#00cc66;stroke-width:2.5;opacity:.35;}
-.nodes circle{fill:#00cc66;opacity:.9;}
-.particle{fill:#ffda00;opacity:.95;r:3.8;animation:moveParticle 4s linear infinite;}
-@keyframes moveParticle{
+svg, canvas {
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
+body {
+  margin:0;
+  background:#004b2b;
+  color:#f7f7f7;
+  font-family:'Inter',sans-serif;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+header {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  margin-top:.8rem;
+  margin-bottom:.5rem;
+  position:relative;
+}
+header svg.title {
+  width:760px;
+  max-width:95%;
+  height:150px;
+  max-width:1400px;
+}
+header text {
+  font-family:'Inter',sans-serif;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:3px;
+  fill:#ffda00;
+  filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));
+  animation:textGlow 5s ease-in-out infinite;
+  font-size:40px;
+}
+@keyframes textGlow {
+  0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}
+  50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}
+}
+.lines line {
+  stroke:#00cc66;
+  stroke-width:2;
+  opacity:.35;
+}
+.nodes circle {
+  fill:#00cc66;
+  opacity:.9;
+  r:5;
+}
+.particle {
+  fill:#ffda00;
+  opacity:.95;
+  r:3.8;
+  animation:moveParticle 4s linear infinite;
+}
+@keyframes moveParticle {
   0%{transform:translate(0,0) scale(0.8);opacity:.4;}
   20%{transform:translate(25px,-10px) scale(1.2);opacity:1;}
   40%{transform:translate(50px,0) scale(1.1);opacity:.9;}
@@ -34,39 +84,180 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .particle:nth-child(5){animation-delay:1.2s;}
 .particle:nth-child(6){animation-delay:1.5s;}
 .particle:nth-child(7){animation-delay:1.8s;}
-#summary{display:flex;justify-content:center;flex-wrap:wrap;gap:1.4rem;color:#cdeac0;margin:.6rem auto 1.2rem;text-align:center;}
-.summary-item{display:flex;align-items:center;gap:8px;font-size:clamp(1rem,1.9vw,1.4rem);font-weight:600;}
-.summary-icon{width:clamp(22px,2.2vw,28px);height:clamp(22px,2.2vw,28px);stroke:#ffda00;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;flex-shrink:0;}
-.summary-item span:first-of-type{opacity:.9;font-weight:500;}
-.summary-value b{color:#fff;font-weight:700;text-shadow:0 0 4px rgba(255,255,255,0.2);}
-#teams{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:1.2rem;padding:1rem;align-content:start;}
-.team{position:relative;border-radius:18px;overflow:hidden;background:rgba(0,104,55,0.9);backdrop-filter:blur(8px);padding:1.4rem 1.3rem 1.1rem;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 4px 10px rgba(0,0,0,0.25);
-  transition:transform .25s ease, box-shadow .3s ease;}
-.team:hover{transform:translateY(-2px);}
-.team::after{content:"";position:absolute;top:0;left:0;width:100%;height:6px;background:var(--accent-gradient);background-size:200% 100%;
-  animation:var(--accent-animation);opacity:.95;}
-.team.complete{background:rgba(0,122,69,0.95);border:1px solid rgba(0,204,102,0.4);}
-.team.afterglow{box-shadow:0 0 20px 6px rgba(0,255,120,0.7);animation:afterglowFade 2.5s ease-out forwards;}
-@keyframes afterglowFade{0%{box-shadow:0 0 25px 8px rgba(0,255,120,0.9);}100%{box-shadow:0 0 0 0 rgba(0,255,120,0);}}
-@keyframes accentShimmer{0%{background-position:0 0;}100%{background-position:200% 0;}}
-@keyframes accentPulse{0%,100%{opacity:1;}50%{opacity:.7;}}
-.team-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;}
-.team h2{margin:0;font-size:1.35rem;color:#ffda00;letter-spacing:.4px;}
-.status-chip{padding:4px 10px;border-radius:6px;font-size:.85rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px;
-  background:rgba(255,255,255,0.08);transition:all .3s ease;}
+#summary {
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:1.4rem;
+  color:#cdeac0;
+  margin:.6rem auto 1.2rem;
+  text-align:center;
+  max-width:1400px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  padding-bottom:.8rem;
+}
+.summary-item {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:clamp(1rem,1.9vw,1.4rem);
+  font-weight:600;
+}
+.summary-icon {
+  width:clamp(22px,2.2vw,28px);
+  height:clamp(22px,2.2vw,28px);
+  stroke:#ffda00;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  fill:none;
+  flex-shrink:0;
+}
+.summary-item span:first-of-type {
+  opacity:.9;
+  font-weight:500;
+}
+.summary-value b {
+  color:#fff;
+  font-weight:700;
+  text-shadow:0 0 4px rgba(255,255,255,0.2);
+}
+#teams {
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+  gap:1.2rem;
+  padding:1rem;
+  align-content:start;
+  max-width:1600px;
+  margin:0 auto;
+}
+.team {
+  position:relative;
+  border-radius:18px;
+  overflow:hidden;
+  background:rgba(0,104,55,0.9);
+  backdrop-filter:blur(8px);
+  padding:1.4rem 1.3rem 1.1rem;
+  box-shadow:0 2px 6px rgba(0,0,0,0.25);
+  transition:transform .25s ease, box-shadow .3s ease;
+}
+.team:hover {
+  transform:translateY(-2px);
+}
+.team::after {
+  content:"";
+  position:absolute;
+  top:0;left:0;width:100%;height:6px;
+  background:var(--accent-gradient);
+  background-size:200% 100%;
+  animation:var(--accent-animation);
+  opacity:.95;
+}
+.team.complete {
+  background:rgba(0,122,69,0.95);
+  border:1px solid rgba(0,204,102,0.4);
+}
+.team.afterglow {
+  box-shadow:0 0 20px 6px rgba(0,255,120,0.7);
+  animation:afterglowFade 2.5s ease-out forwards;
+}
+@keyframes afterglowFade {
+  0%{box-shadow:0 0 25px 8px rgba(0,255,120,0.9);}
+  100%{box-shadow:0 0 0 0 rgba(0,255,120,0);}
+}
+@keyframes accentShimmer {0%{background-position:0 0;}100%{background-position:200% 0;}}
+@keyframes accentPulse {0%,100%{opacity:1;}50%{opacity:.7;}}
+.team-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:.6rem;
+}
+.team h2 {
+  margin:0;
+  font-size:1.35rem;
+  color:#ffda00;
+  letter-spacing:.4px;
+}
+.status-chip {
+  padding:4px 10px;
+  border-radius:6px;
+  font-size:.85rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.3px;
+  background:rgba(255,255,255,0.08);
+  transition:all .3s ease;
+}
 .status-chip.active{color:#00ff99;}
-.status-chip.validating{color:#ffda00;background:rgba(255,218,0,0.15);box-shadow:0 0 6px rgba(255,218,0,0.4);animation:chipPulse 1.3s ease-in-out infinite;}
-.status-chip.completed{color:#fff;background:rgba(0,204,102,0.25);box-shadow:0 0 8px rgba(0,204,102,0.5);}
-@keyframes chipPulse{0%,100%{box-shadow:0 0 6px rgba(255,218,0,0.3);}50%{box-shadow:0 0 12px rgba(255,218,0,0.7);}}
-.metric-group{background:rgba(255,255,255,0.04);border-radius:10px;padding:.8rem .8rem;display:grid;grid-template-columns:1fr 1fr;row-gap:6px;column-gap:8px;font-size:1rem;}
-.metric-label{opacity:.9;display:flex;align-items:center;gap:8px;white-space:nowrap;}
-.metric-value{text-align:right;font-weight:600;font-size:1rem;}
-.icon{width:22px;height:22px;stroke:#ffda00;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;}
-.bar{grid-column:1/3;width:100%;height:8px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;margin:3px 0 10px;}
-.bar-fill{height:100%;transition:width .3s ease;}
-.bar-fill.validating{background:linear-gradient(270deg,#ffda00,#ff9900,#ffda00);background-size:200% 100%;animation:shimmer 1.5s linear infinite;}
-@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.status-chip.validating {
+  color:#ffda00;
+  background:rgba(255,218,0,0.15);
+  box-shadow:0 0 4px rgba(255,218,0,0.6);
+  animation:chipPulse 1.3s ease-in-out infinite;
+}
+.status-chip.completed {
+  color:#fff;
+  background:rgba(0,204,102,0.25);
+  box-shadow:0 0 8px rgba(0,204,102,0.5);
+}
+@keyframes chipPulse {
+  0%,100%{box-shadow:0 0 6px rgba(255,218,0,0.3);}
+  50%{box-shadow:0 0 12px rgba(255,218,0,0.7);}
+}
+.metric-group {
+  background:rgba(255,255,255,0.04);
+  border-radius:10px;
+  padding:.8rem .8rem;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  row-gap:6px;
+  column-gap:8px;
+  font-size:1rem;
+}
+.metric-label {
+  opacity:.9;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+}
+.metric-value {
+  text-align:right;
+  font-weight:600;
+  font-size:1rem;
+}
+.icon {
+  width:22px;height:22px;
+  stroke:#ffda00;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  fill:none;
+}
+.bar {
+  grid-column:1/3;
+  width:100%;
+  height:8px;
+  background:rgba(255,255,255,0.15);
+  border-radius:4px;
+  overflow:hidden;
+  margin:3px 0 10px;
+}
+.bar-fill {
+  height:100%;
+  transition:width .3s ease;
+}
+.bar-fill.validating {
+  background:linear-gradient(270deg,#ffda00,#ff9900,#ffda00);
+  background-size:200% 100%;
+  animation:shimmer 1.5s linear infinite;
+}
+@keyframes shimmer {
+  0%{background-position:200% 0;}
+  100%{background-position:-200% 0;}
+}
 
 /* 🎉 Center Banner */
 #completion-banner {
@@ -95,6 +286,21 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
   0% { box-shadow: 0 0 15px rgba(255,218,0,0.6); }
   100% { box-shadow: 0 0 35px rgba(0,255,120,0.8); }
 }
+@media (min-resolution: 2dppx) {
+  body, svg { transform: translateZ(0); }
+}
+:root {
+  --scale: min(1, 1600px / 100vw);
+}
+body {
+  font-size: calc(16px * var(--scale));
+}
+.team {
+  padding: calc(1.4rem * var(--scale));
+}
+.team h2 {
+  font-size: calc(1.35rem * var(--scale));
+}
 </style>
 </head>
 <body>
@@ -103,7 +309,6 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 <svg class="title" viewBox="0 0 700 160">
   <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="40">Decrypt the Narrative</text>
 
-  <!-- Connecting Lines -->
   <g class="lines">
     <line x1="100" y1="110" x2="180" y2="80"/>
     <line x1="180" y1="80" x2="260" y2="110"/>
@@ -113,7 +318,6 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
     <line x1="500" y1="80" x2="580" y2="110"/>
   </g>
 
-  <!-- Connection Nodes -->
   <g class="nodes">
     <circle cx="100" cy="110" r="4"/>
     <circle cx="180" cy="80" r="4"/>
@@ -124,7 +328,6 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
     <circle cx="580" cy="110" r="4"/>
   </g>
 
-  <!-- Animated Particles -->
   <g class="particles">
     <circle class="particle" cx="100" cy="110" r="3.8"/>
     <circle class="particle" cx="180" cy="80" r="3.8"/>
@@ -137,7 +340,6 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 </svg>
 </header>
 
-
 <div id="summary">
   <div class="summary-item"><svg class="summary-icon" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="15" cy="9" r="3"/><path d="M4 20a7 7 0 0 1 16 0"/></svg><span>Teams:</span><span class="summary-value" id="count-teams"><b>0</b></span></div>
   <div class="summary-item"><svg class="summary-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg><span>Tokens:</span><span class="summary-value" id="count-tokens"><b>0</b></span></div>
@@ -147,7 +349,6 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 
 <div id="teams"></div>
 
-<!-- 🎉 Central Completion Banner -->
 <div id="completion-banner"></div>
 
 <script>
