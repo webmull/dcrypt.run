@@ -40,41 +40,98 @@ COMPLETED_TEAMS = set()
 def current_time() -> float:
     return time.time()
 
-
 def chaos_roll(team: str):
     """Inject controlled chaos into /fragment requests."""
     if random.random() < 0.10:  # ~10% chance overall
-        chaos_type = random.choice(["delay", "malformed_json", "broken_json", "error_code"])
+        chaos_type = random.choice([
+            "delay",
+            "malformed_json",
+            "broken_json",
+            "error_code",
+            "duplicate_fragment",
+            "empty_response",
+            "html_injection",
+            "slow_burst",
+            "token_drain",
+            "reverse_text",
+            "unicode_garble",
+            "out_of_order",
+        ])
         CHAOS_EVENTS.setdefault(team, []).append({"ts": current_time(), "type": chaos_type})
 
-        # 💤 Artificial delay chaos (scales with activity)
+        team_info = TEAM_DATA.get(team, {})
+        elapsed_minutes = (current_time() - team_info.get("start_time", current_time())) / 60
+        scale = min(1 + (elapsed_minutes * 0.1), 2.0)
+
+        # --- Delay ---
         if chaos_type == "delay":
-            team_info = TEAM_DATA.get(team, {})
-            elapsed_minutes = (current_time() - team_info.get("start_time", current_time())) / 60
-            scale = min(1 + (elapsed_minutes * 0.1), 2.0)
-            sleep_time = random.uniform(0.5, 2.5) * scale
-            time.sleep(sleep_time)
+            time.sleep(random.uniform(0.5, 2.5) * scale)
             return None
 
-        # 🪓 Malformed JSON chaos (truncated)
+        # --- Malformed JSON ---
         if chaos_type == "malformed_json":
             broken_body = '{"word": "spl1t", "pos":'
             return PlainTextResponse(broken_body, media_type="application/json", status_code=200)
 
-        # 💣 Broken JSON chaos (garbled)
+        # --- Broken JSON ---
         if chaos_type == "broken_json":
             broken_body = "{not valid json at all"
             return PlainTextResponse(broken_body, media_type="application/json", status_code=200)
 
-        # ☕ Error code chaos
+        # --- Error Code ---
         if chaos_type == "error_code":
             raise HTTPException(
                 status_code=random.choice([418, 429, 500, 504]),
                 detail="Chaos error event triggered"
             )
 
-    return None
+        # --- Duplicate Fragment ---
+        if chaos_type == "duplicate_fragment":
+            frag = random.choice(FRAGMENTS)
+            return {"fragments": [frag, frag]}
 
+        # --- Empty Response ---
+        if chaos_type == "empty_response":
+            return {}
+
+        # --- HTML Injection ---
+        if chaos_type == "html_injection":
+            html = "<html><body><h1>Error</h1></body></html>"
+            return PlainTextResponse(html, media_type="application/json", status_code=200)
+
+        # --- Slow Burst ---
+        if chaos_type == "slow_burst":
+            for _ in range(random.randint(3, 6)):
+                time.sleep(random.uniform(0.3, 1.0))
+            return None
+
+        # --- Token Drain ---
+        if chaos_type == "token_drain":
+            token_data = TEAM_TOKENS.get(team)
+            if token_data:
+                token_data["remaining"] = max(0, token_data["remaining"] - random.randint(1, 3))
+            return None
+
+        # --- Reverse Text ---
+        if chaos_type == "reverse_text":
+            frag = random.choice(FRAGMENTS)
+            frag_copy = frag.copy()
+            frag_copy["word"] = frag_copy["word"][::-1]
+            return frag_copy
+
+        # --- Unicode Garble ---
+        if chaos_type == "unicode_garble":
+            frag = random.choice(FRAGMENTS)
+            frag_copy = frag.copy()
+            frag_copy["word"] = frag_copy["word"] + random.choice(["μΩλ", "Ʃ∂∆", "☠️"])
+            return frag_copy
+
+        # --- Out of Order ---
+        if chaos_type == "out_of_order":
+            last_words = FRAGMENTS[-10:]
+            return random.choice(last_words)
+
+    return None
 
 # -------------------------------------------------------------
 # Auth Endpoint
