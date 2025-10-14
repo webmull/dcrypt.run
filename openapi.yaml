@@ -64,7 +64,7 @@ paths:
           - **Reverse text:** Word reversed.
           - **Unicode garble:** Adds strange Unicode symbols.
           - **Out of order:** Returns fragment from the end of the text.
-          - **There could be more, don't trust HTTP status codes....
+          - There could be more, don't trust HTTP status codes....
         - Handle every case gracefully—resilience and retry logic are key.
       parameters:
         - name: team
