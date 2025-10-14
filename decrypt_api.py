@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
-import random, time, uuid, os
+import random, time, uuid, os, re
 
 app = FastAPI(title="Decrypt the Narrative API")
 
