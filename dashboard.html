@@ -16,7 +16,7 @@ header svg.title{width:760px;max-width:95%;height:150px;}
 header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:3px;fill:#ffda00;
   filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));animation:textGlow 5s ease-in-out infinite;font-size:40px;}
 @keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
-.lines line{stroke-width:2.5;opacity:.85;}
+.lines line{stroke-width:2.5;opacity:.9;}
 .nodes circle{fill:#00ff99;opacity:.9;filter:drop-shadow(0 0 4px #00ff99);}
 #header-particles{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0;pointer-events:none;}
 .particle{position:absolute;width:5px;height:5px;border-radius:50%;
@@ -55,6 +55,18 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
   padding:1rem 2rem;border-radius:12px;box-shadow:0 0 20px rgba(255,218,0,0.6);
   opacity:0;z-index:9999;pointer-events:none;transition:opacity .4s ease,transform .4s ease;}
 #completion-banner.show{opacity:1;transform:translate(-50%,-50%) scale(1.05);}
+
+/* Docs link */
+#docs-link {
+  position:fixed;bottom:14px;right:18px;
+  background:rgba(0,122,69,0.9);
+  color:#ffda00;text-decoration:none;
+  font-weight:600;font-size:0.95rem;
+  padding:8px 14px;border-radius:8px;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+  transition:all 0.3s ease;z-index:50;
+}
+#docs-link:hover {background:#00cc66;color:#fff;box-shadow:0 0 12px rgba(0,255,120,0.6);}
 </style>
 </head>
 <body>
@@ -63,11 +75,14 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 <div id="header-particles"></div>
 <svg class="title" viewBox="0 0 700 160">
   <defs>
+    <!-- Smooth cycling gradient -->
     <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#00ff99" />
-      <stop offset="50%" stop-color="#ffda00" />
-      <stop offset="100%" stop-color="#00cc66" />
-      <animateTransform attributeName="gradientTransform" attributeType="XML" type="translate" from="-1 0" to="1 0" dur="4s" repeatCount="indefinite"/>
+      <stop offset="0%" stop-color="#00ff99">
+        <animate attributeName="stop-color" values="#00ff99;#ffda00;#00cc66;#00ff99" dur="6s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#ffda00">
+        <animate attributeName="stop-color" values="#ffda00;#00cc66;#00ff99;#ffda00" dur="6s" repeatCount="indefinite"/>
+      </stop>
     </linearGradient>
   </defs>
   <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="40">Decrypt the Narrative</text>
@@ -95,6 +110,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 
 <div id="teams"></div>
 <div id="completion-banner"></div>
+<a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
 
 <script>
 /* Floating particles */
@@ -110,7 +126,7 @@ for(let i=0;i<15;i++){
 }
 
 /* Dashboard logic */
-let completedTeams=new Set(),confettiActive=false;
+let completedTeams=new Set();
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
 async function fetchStatus(){
   try{
