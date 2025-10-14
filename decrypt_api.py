@@ -1,9 +1,18 @@
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
-import random, time, uuid, os, re
+from fastapi.openapi.utils import get_openapi
+import random, time, uuid, os, re, yaml
 
 app = FastAPI(title="Decrypt the Narrative API")
+
+with open("openapi.yaml") as f:
+    custom_spec = yaml.safe_load(f)
+
+def custom_openapi():
+    return custom_spec
+
+app.openapi = custom_openapi
 
 # --- CORS ---
 app.add_middleware(
