@@ -108,7 +108,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 <a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
 
 <script>
-/* Particle field with recycling */
+/* Particle field */
 const field=document.getElementById("header-particles");
 const particles=[];
 const particleCount=25;
@@ -134,8 +134,29 @@ function recycle(){
 }
 recycle();
 
-/* Data handling */
-let prevState={};
+/* Completion banner queue */
+const banner=document.getElementById("completion-banner");
+let bannerQueue=[];let bannerActive=false;let shownTeams=new Set();
+function queueBanner(team){
+  if(shownTeams.has(team))return;
+  shownTeams.add(team);
+  bannerQueue.push(team);
+  processBannerQueue();
+}
+function processBannerQueue(){
+  if(bannerActive||bannerQueue.length===0)return;
+  bannerActive=true;
+  const team=bannerQueue.shift();
+  banner.innerText=`🎉 ${team} has completed the challenge! 🎉`;
+  banner.classList.add("show");
+  setTimeout(()=>{
+    banner.classList.remove("show");
+    bannerActive=false;
+    setTimeout(processBannerQueue,600);
+  },4000);
+}
+
+/* Dashboard data handling */
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
 function updateBar(bar,value){
   const prev=parseFloat(bar.dataset.value)||0;
@@ -176,6 +197,7 @@ async function fetchStatus(){
       container.appendChild(card);
       if(seenPercent>0)updateBar(fills[0],seenPercent);
       if(remainingPercent<100)updateBar(fills[1],remainingPercent);
+      if(t.completed)queueBanner(t.team);
     }
   }catch(e){console.error(e);}
 }
