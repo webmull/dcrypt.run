@@ -18,7 +18,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 @keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
 .lines line{stroke:#00cc66;stroke-width:2.5;opacity:.35;}
 .nodes circle{fill:#00cc66;opacity:.9;}
-.particle{fill:#ffda00;opacity:.95;r:3.8;}
+.particle{fill:#ffda00;opacity:.4;r:3.8;transition:opacity .25s ease;}
 #summary{display:flex;justify-content:center;flex-wrap:wrap;gap:1.4rem;color:#cdeac0;margin:.6rem auto 1.2rem;text-align:center;}
 .summary-item{display:flex;align-items:center;gap:8px;font-size:clamp(1rem,1.9vw,1.4rem);font-weight:600;}
 .summary-icon{width:clamp(22px,2.2vw,28px);height:clamp(22px,2.2vw,28px);stroke:#ffda00;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;flex-shrink:0;}
@@ -209,48 +209,15 @@ function launchConfettiForTile(tileElement,duration){
  },300+Math.random()*200);
 }
 
-/* === Header Orbit + Chaos Burst === */
-const particles=document.querySelectorAll('.particle');
-const svg=document.querySelector('header svg');
-let chaosCount=0;
-particles.forEach((p,i)=>{
-  const baseX=parseFloat(p.getAttribute('cx'));
-  const baseY=parseFloat(p.getAttribute('cy'));
-  let t=0;
-  function orbit(){
-    t+=0.03;
-    const radius=5+Math.sin(t*1.5+i)*3;
-    const angle=t+i;
-    p.setAttribute('cx',baseX+Math.cos(angle)*radius);
-    p.setAttribute('cy',baseY+Math.sin(angle)*radius);
-    requestAnimationFrame(orbit);
-  }
-  orbit();
-});
-function chaosBurst(){
-  for(let i=0;i<6;i++){
-    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    c.setAttribute('cx',340);
-    c.setAttribute('cy',90);
-    c.setAttribute('r',3);
-    c.setAttribute('fill','#ffda00');
-    svg.appendChild(c);
-    c.animate(
-      [
-        {opacity:1,transform:'scale(1)'},
-        {opacity:0,transform:`translate(${(Math.random()-0.5)*150}px, ${(Math.random()-0.5)*60}px) scale(0)`}
-      ],
-      {duration:700,easing:'ease-out'}
-    );
-    setTimeout(()=>c.remove(),700);
-  }
+/* === Header Particle Relay Animation === */
+const particles=[...document.querySelectorAll('.particle')];
+let relayIndex=0;
+function relay(){
+  particles.forEach((p,i)=>p.style.opacity=i===relayIndex?1:0.4);
+  relayIndex=(relayIndex+1)%particles.length;
+  setTimeout(relay,120);
 }
-const _oldUpdateHeader=window.updateHeaderFromStatus;
-window.updateHeaderFromStatus=function(data){
-  if(data.total_chaos>chaosCount)chaosBurst();
-  chaosCount=data.total_chaos;
-  if(_oldUpdateHeader)_oldUpdateHeader(data);
-};
+relay();
 
 setInterval(fetchStatus,1500);
 fetchStatus();
