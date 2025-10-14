@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import RedirectResponse
 import random, time, uuid, os, re, yaml
 
 app = FastAPI(title="Decrypt the Narrative API")
@@ -51,7 +52,7 @@ def current_time() -> float:
 
 def chaos_roll(team: str):
     """Inject controlled chaos into /fragment requests."""
-    if random.random() < 0.45:  # ~55% chance overall
+    if random.random() < 0.55:  # ~55% chance overall
         chaos_type = random.choice([
             "delay",
             "malformed_json",
@@ -304,6 +305,10 @@ def serve_dashboard():
         raise HTTPException(status_code=404, detail="dashboard.html not found")
     with open(path) as f:
         return f.read()
+
+@app.get("/dashboard")
+def redirect_dashboard():
+    return RedirectResponse(url="/")
 
 # -------------------------------------------------------------
 # Health Check

@@ -46,7 +46,7 @@ paths:
     get:
       summary: Return a random fragment or chaos response
       description: |
-        Retrieve a random word fragment or trigger a chaos event (~45% chance).
+        Retrieve a random word fragment or trigger a chaos event (~55% chance).
 
         **Hints:**
         - Requires both `team` and `token` headers from `/auth`.
