@@ -16,9 +16,8 @@ header svg.title{width:760px;max-width:95%;height:150px;}
 header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:3px;fill:#ffda00;
   filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));animation:textGlow 5s ease-in-out infinite;font-size:40px;}
 @keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
-.lines line{stroke:#00cc66;stroke-width:2.5;opacity:.35;}
+.lines line{stroke-width:2.5;opacity:.5;}
 .nodes circle{fill:#00cc66;opacity:.9;}
-.particle{fill:#ffda00;opacity:.4;r:3.8;transition:opacity .25s ease;}
 #summary{display:flex;justify-content:center;flex-wrap:wrap;gap:1.4rem;color:#cdeac0;margin:.6rem auto 1.2rem;text-align:center;}
 .summary-item{display:flex;align-items:center;gap:8px;font-size:clamp(1rem,1.9vw,1.4rem);font-weight:600;}
 .summary-icon{width:clamp(22px,2.2vw,28px);height:clamp(22px,2.2vw,28px);stroke:#ffda00;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;flex-shrink:0;}
@@ -84,22 +83,28 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 
 <header>
 <svg class="title" viewBox="0 0 700 160">
-  <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="40">Decrypt the Narrative</text>
+  <defs>
+    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00ff99">
+        <animate attributeName="offset" values="0;1" dur="3s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#004b2b" />
+    </linearGradient>
+  </defs>
+  <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="40">
+    Decrypt the Narrative
+  </text>
   <g class="lines">
-    <line x1="100" y1="110" x2="180" y2="80"/>
-    <line x1="180" y1="80" x2="260" y2="110"/>
-    <line x1="260" y1="110" x2="340" y2="70"/>
-    <line x1="340" y1="70" x2="420" y2="110"/>
-    <line x1="420" y1="110" x2="500" y2="80"/>
-    <line x1="500" y1="80" x2="580" y2="110"/>
+    <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
+    <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
+    <line x1="260" y1="110" x2="340" y2="70" stroke="url(#flowGradient)" />
+    <line x1="340" y1="70" x2="420" y2="110" stroke="url(#flowGradient)" />
+    <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
+    <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
   </g>
   <g class="nodes">
-    <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
-    <circle cx="340" cy="70" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
-  </g>
-  <g class="particles">
-    <circle class="particle" cx="100" cy="110" r="3.8"/><circle class="particle" cx="180" cy="80" r="3.8"/><circle class="particle" cx="260" cy="110" r="3.8"/>
-    <circle class="particle" cx="340" cy="70" r="3.8"/><circle class="particle" cx="420" cy="110" r="3.8"/><circle class="particle" cx="500" cy="80" r="3.8"/><circle class="particle" cx="580" cy="110" r="3.8"/>
+    <circle cx="100" cy="110" r="4" /><circle cx="180" cy="80" r="4" /><circle cx="260" cy="110" r="4" />
+    <circle cx="340" cy="70" r="4" /><circle cx="420" cy="110" r="4" /><circle cx="500" cy="80" r="4" /><circle cx="580" cy="110" r="4" />
   </g>
 </svg>
 </header>
@@ -182,7 +187,6 @@ async function fetchStatus(){
         showCompletionBanner(team.team);
       }
     });
-    if(window.updateHeaderFromStatus)updateHeaderFromStatus(data);
   }catch(e){console.error(e);}
 }
 
@@ -208,16 +212,6 @@ function launchConfettiForTile(tileElement,duration){
    if(++i>=bursts){clearInterval(interval);confettiActive=false;}
  },300+Math.random()*200);
 }
-
-/* === Header Particle Relay Animation === */
-const particles=[...document.querySelectorAll('.particle')];
-let relayIndex=0;
-function relay(){
-  particles.forEach((p,i)=>p.style.opacity=i===relayIndex?1:0.4);
-  relayIndex=(relayIndex+1)%particles.length;
-  setTimeout(relay,120);
-}
-relay();
 
 setInterval(fetchStatus,1500);
 fetchStatus();
