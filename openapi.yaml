@@ -1,196 +1,131 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Decrypt the Narrative API
-  version: "1.0.0"
-  description: |
-    An API Challenge of Errors, Tokens, and Twisted Tales.  
-    Teams request fragments, handle chaos, and piece together the full story.  
-
-    Built with **FastAPI**, featuring random chaos events (HTTP 418, 500, delays), expiring tokens,  
-    and real-time team progress tracking via the dashboard.
-
-tags:
-  - name: Authentication
-    description: Issue and refresh team tokens
-  - name: Fragments
-    description: Retrieve word fragments and experience chaos events
-  - name: Validation
-    description: Submit and verify completed narrative
-  - name: Status
-    description: Get team and challenge progress
-  - name: Dashboard
-    description: View the visual web dashboard
-
+  version: 1.1.0
+servers:
+  - url: /
 paths:
   /auth:
     post:
-      tags: [Authentication]
-      summary: Issue or refresh a team token
-      description: |
-        Generates a new token for a team or returns an existing one if still valid.  
-        Each token has a limited number of requests (default 20).
+      summary: Issue a token or return existing valid one
+      description: Authenticate a team and issue or reuse a token.
       parameters:
         - name: team
           in: header
           required: true
-          description: The team name.
           schema:
             type: string
+            maxLength: 20
+            pattern: "^[A-Za-z0-9 _]+$"
+          description: Team name (max 20 chars; letters, digits, spaces, underscores only)
       responses:
-        '200':
-          description: Token successfully issued or returned.
+        "200":
+          description: Token issued or reused
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  token:
-                    type: string
-                    description: UUID token string.
-                  team:
-                    type: string
-                  remaining:
-                    type: integer
-        '400':
-          description: Missing team header.
+                  token: { type: string }
+                  team: { type: string }
+                  remaining: { type: integer }
+        "400":
+          description: Missing or invalid team header
+        "403":
+          description: Forbidden
+        "401":
+          description: Unauthorized
 
   /fragment:
     get:
-      tags: [Fragments]
-      summary: Retrieve a random word fragment
+      summary: Return a random fragment or chaos response
       description: |
-        Returns a random word and its position from the canonical text.  
-        May randomly trigger chaos events like **HTTP 418 (I'm a teapot)**,  
-        **HTTP 500**, or artificial timeouts.
+        Returns a random word fragment or triggers one of several chaos types (~10% chance):
+        delay, malformed_json, broken_json, error_code, duplicate_fragment,
+        empty_response, html_injection, slow_burst, token_drain, reverse_text,
+        unicode_garble, out_of_order.
       parameters:
         - name: team
           in: header
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: token
           in: header
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
-        '200':
-          description: Word fragment successfully returned.
+        "200":
+          description: Normal or chaotic fragment response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  word:
-                    type: string
-                  position:
-                    type: integer
-        '403':
-          description: Invalid or expired token.
-        '418':
-          description: Chaos event (I’m a teapot).
-        '500':
-          description: Chaos event (Internal Server Error).
+                oneOf:
+                  - type: object
+                    properties:
+                      word: { type: string }
+                      position: { type: integer }
+                  - type: object
+                    properties:
+                      fragments:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            word: { type: string }
+                            position: { type: integer }
+                  - type: object
+                    description: May be empty or malformed
+        "400":
+          description: Missing headers or bad request
+        "401":
+          description: Token expired
+        "403":
+          description: Invalid token or limit reached
+        "418":
+          description: Chaos error (418)
+        "429":
+          description: Chaos error (429)
+        "500":
+          description: Chaos error (500)
+        "504":
+          description: Chaos error (504)
 
   /validate:
     post:
-      tags: [Validation]
-      summary: Validate team submission
-      description: |
-        Submit your reconstructed sentence for validation.  
-        Marks a team as completed if all fragments were seen.
+      summary: Validate a team's submitted sentence
       parameters:
         - name: team
           in: header
           required: true
-          schema:
-            type: string
+          schema: { type: string }
+        - name: token
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                submission:
+                  type: string
+                  description: Full reconstructed sentence
       responses:
-        '200':
-          description: Validation result
+        "200":
+          description: Successful validation
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    enum: [completed, incomplete]
-                  team:
-                    type: string
-                  duration:
-                    type: number
-                    description: Time in seconds to completion (if completed)
-        '404':
-          description: Unknown team.
-
-  /status:
-    get:
-      tags: [Status]
-      summary: Retrieve full team and system status
-      description: Returns live game progress for all teams.
-      responses:
-        '200':
-          description: Current system state.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  total_chaos:
-                    type: integer
-                  total_words:
-                    type: integer
-                  teams:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        team:
-                          type: string
-                        seen_count:
-                          type: integer
-                        submissions:
-                          type: integer
-                        remaining:
-                          type: integer
-                        tokens_issued:
-                          type: integer
-                        completed:
-                          type: boolean
-                        chaos:
-                          type: integer
-                        duration:
-                          type: number
-
-  /dashboard:
-    get:
-      tags: [Dashboard]
-      summary: Serve the live dashboard
-      description: Returns the HTML dashboard showing team progress.
-      responses:
-        '200':
-          description: Dashboard HTML
-          content:
-            text/html:
-              schema:
-                type: string
-        '404':
-          description: Dashboard file not found.
-
-components:
-  securitySchemes:
-    teamHeader:
-      type: apiKey
-      in: header
-      name: team
-    tokenHeader:
-      type: apiKey
-      in: header
-      name: token
-  responses:
-    UnauthorizedError:
-      description: Invalid token or missing headers
-security:
-  - teamHeader: []
-  - tokenHeader: []
+                  team: { type: string }
+                  status: { type: string }
+                  message: { type: string }
+                  completed_at: { type: number }
+                  duration: { type: number }
+        "400":
+          description: Incorrect or missing submission
+        "403":
+          description: Invalid or expired token
