@@ -46,7 +46,7 @@ paths:
     get:
       summary: Return a random fragment or chaos response
       description: |
-        Retrieve a random word fragment or trigger a chaos event (~10% chance).
+        Retrieve a random word fragment or trigger a chaos event (~45% chance).
 
         **Hints:**
         - Requires both `team` and `token` headers from `/auth`.
@@ -64,6 +64,7 @@ paths:
           - **Reverse text:** Word reversed.
           - **Unicode garble:** Adds strange Unicode symbols.
           - **Out of order:** Returns fragment from the end of the text.
+          - **There could be more, don't trust HTTP status codes....
         - Handle every case gracefully—resilience and retry logic are key.
       parameters:
         - name: team
