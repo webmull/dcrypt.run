@@ -42,7 +42,7 @@ def current_time() -> float:
 
 def chaos_roll(team: str):
     """Inject controlled chaos into /fragment requests."""
-    if random.random() < 0.25:  # ~10% chance overall
+    if random.random() < 0.55:  # ~55% chance overall
         chaos_type = random.choice([
             "delay",
             "malformed_json",
