@@ -1,14 +1,22 @@
 openapi: 3.1.0
 info:
   title: Decrypt the Narrative API
-  version: 1.1.0
+  version: 1.2.0
 servers:
   - url: /
 paths:
   /auth:
     post:
       summary: Issue a token or return existing valid one
-      description: Authenticate a team and issue or reuse a token.
+      description: |
+        Authenticate a team and issue or reuse a token.
+
+        **Hints:**
+        - Include your team name in the `team` header.
+        - Team names must be ≤20 characters (letters, numbers, spaces, underscores only).
+        - Using the same name again reuses the same token (until idle timeout).
+        - If you hit `"Token expired"`, just call `/auth` again.
+        - The number in `remaining` shows how many `/fragment` requests you have left.
       parameters:
         - name: team
           in: header
@@ -40,10 +48,25 @@ paths:
     get:
       summary: Return a random fragment or chaos response
       description: |
-        Returns a random word fragment or triggers one of several chaos types (~10% chance):
-        delay, malformed_json, broken_json, error_code, duplicate_fragment,
-        empty_response, html_injection, slow_burst, token_drain, reverse_text,
-        unicode_garble, out_of_order.
+        Retrieve a random word fragment or trigger a chaos event (~10% chance).
+
+        **Hints:**
+        - Requires both `team` and `token` headers from `/auth`.
+        - Each successful call decrements your token quota.
+        - Chaos may strike randomly. Possible effects include:
+          - **Delay:** Slow or delayed response.
+          - **Malformed JSON:** Truncated or invalid payload.
+          - **Broken JSON:** Garbled body, won't parse.
+          - **Error code:** 418, 429, 500, or 504 responses.
+          - **Duplicate fragment:** Two of the same fragment.
+          - **Empty response:** `{}` returned.
+          - **HTML injection:** Non-JSON content disguised as JSON.
+          - **Slow burst:** Multiple small pauses.
+          - **Token drain:** Reduces your remaining quota by extra 1–3.
+          - **Reverse text:** Word reversed.
+          - **Unicode garble:** Adds strange Unicode symbols.
+          - **Out of order:** Returns fragment from the end of the text.
+        - Handle every case gracefully—resilience and retry logic are key.
       parameters:
         - name: team
           in: header
@@ -93,6 +116,18 @@ paths:
   /validate:
     post:
       summary: Validate a team's submitted sentence
+      description: |
+        Submit your full reconstructed sentence for validation.
+
+        **Hints:**
+        - Include both `team` and `token` headers from `/auth`.
+        - Body must contain a `submission` field with your full sentence.
+        - Comparison ignores punctuation and case.
+        - On failure, you can correct and retry.
+        - On success, you’ll see:
+          - `"status": "success"`
+          - `"duration"` showing total time taken.
+          - `"completed_at"` timestamp.
       parameters:
         - name: team
           in: header
