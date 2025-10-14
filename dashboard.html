@@ -16,7 +16,7 @@ header svg.title{width:760px;max-width:95%;height:150px;}
 header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:3px;fill:#ffda00;
   filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));animation:textGlow 5s ease-in-out infinite;font-size:40px;}
 @keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
-.lines line{stroke-width:2.5;opacity:.8;}
+.lines line{stroke-width:2.5;opacity:.85;}
 .nodes circle{fill:#00ff99;opacity:.9;filter:drop-shadow(0 0 4px #00ff99);}
 #header-particles{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0;pointer-events:none;}
 .particle{position:absolute;width:5px;height:5px;border-radius:50%;
@@ -66,7 +66,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
     <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#00ff99" />
       <stop offset="50%" stop-color="#ffda00" />
-      <stop offset="100%" stop-color="#00ccff" />
+      <stop offset="100%" stop-color="#00cc66" />
       <animateTransform attributeName="gradientTransform" attributeType="XML" type="translate" from="-1 0" to="1 0" dur="4s" repeatCount="indefinite"/>
     </linearGradient>
   </defs>
@@ -97,7 +97,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 <div id="completion-banner"></div>
 
 <script>
-/* Floating header particles */
+/* Floating particles */
 const container=document.getElementById("header-particles");
 for(let i=0;i<15;i++){
   const p=document.createElement("div");
@@ -110,31 +110,8 @@ for(let i=0;i<15;i++){
 }
 
 /* Dashboard logic */
-let completedTeams=new Set(),confettiActive=false,bannerQueue=[],bannerShowing=false;
+let completedTeams=new Set(),confettiActive=false;
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
-function showCompletionBanner(teamName){bannerQueue.push(teamName);if(!bannerShowing)processBannerQueue();}
-function processBannerQueue(){
-  if(bannerQueue.length===0)return;
-  bannerShowing=true;const teamName=bannerQueue.shift();
-  const banner=document.getElementById("completion-banner");
-  banner.textContent=`🎉 ${teamName} has completed the challenge! 🎉`;
-  banner.classList.add("show");
-  setTimeout(()=>{banner.classList.remove("show");bannerShowing=false;processBannerQueue();},4000);
-}
-function launchConfettiForTile(tileElement,duration){
- if(confettiActive||typeof confetti!=="function")return;
- confettiActive=true;
- const rect=tileElement.getBoundingClientRect();
- const x=(rect.left+rect.width/2)/window.innerWidth;
- const y=(rect.top+rect.height/2)/window.innerHeight;
- const bursts=3;let i=0;
- const scale=Math.min(1+(duration/60)*0.2,1.8);
- const interval=setInterval(()=>{
-   confetti({particleCount:6*scale,spread:45*scale,startVelocity:25,ticks:80,gravity:0.6,scalar:0.6*scale,
-     colors:["#00ff99","#ffda00","#ffffff"],origin:{x:x+(Math.random()-0.5)*0.08,y:y+(Math.random()-0.5)*0.1}});
-   if(++i>=bursts){clearInterval(interval);confettiActive=false;}
- },250);
-}
 async function fetchStatus(){
   try{
     const res=await fetch("/status",{cache:"no-store"});
@@ -152,22 +129,19 @@ async function fetchStatus(){
       const remainingPercent=Math.min((t.remaining/20)*100,100);
       const card=document.createElement("div");
       card.className="team"+(t.completed?" complete":"");
-      card.style.setProperty("--accent-gradient","linear-gradient(90deg,#00cc66,#00ff99)");
+      card.style.setProperty("--accent-gradient","linear-gradient(90deg,#00ff99,#ffda00,#00cc66)");
       card.style.setProperty("--accent-animation","accentShimmer 6s linear infinite");
       card.innerHTML=`
         <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${t.completed?"completed":""}">${t.completed?"Completed":"Active"}</div></div>
         <div class="metric-group">
-          <div class="metric-label"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>Seen</div>
-          <div class="metric-value">${seenPercent.toFixed(0)}%</div>
+          <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
           <div class="bar"><div class="bar-fill" style="width:${seenPercent}%;"></div></div>
-          <div class="metric-label"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>Requests</div>
-          <div class="metric-value">${t.remaining}</div>
+          <div class="metric-label">Requests</div><div class="metric-value">${t.remaining}</div>
           <div class="bar"><div class="bar-fill" style="width:${remainingPercent}%;background:#ffda00;"></div></div>
           <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
           <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
         </div>`;
       container.appendChild(card);
-      if(t.completed&&!completedTeams.has(t.team)){completedTeams.add(t.team);launchConfettiForTile(card,t.duration||0);showCompletionBanner(t.team);}
     }
   }catch(e){console.error(e);}
 }
