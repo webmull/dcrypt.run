@@ -188,7 +188,6 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
     token_data = TEAM_TOKENS.get(team)
     now = current_time()
 
-
     if not token_data or now - token_data["timestamp"] > IDLE_TIMEOUT:
         raise HTTPException(status_code=401, detail="Token expired. Please re-authenticate.")
 
@@ -298,14 +297,13 @@ def get_status():
 # -------------------------------------------------------------
 # Dashboard HTML
 # -------------------------------------------------------------
-@app.get("/dashboard", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
     path = os.path.join(os.path.dirname(__file__), "dashboard.html")
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="dashboard.html not found")
     with open(path) as f:
         return f.read()
-
 
 # -------------------------------------------------------------
 # Health Check
