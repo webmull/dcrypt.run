@@ -189,9 +189,6 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
     token_data = TEAM_TOKENS.get(team)
     now = current_time()
 
-    token_data["remaining"] -= 1
-    token_data["timestamp"] = now
-
     if not token_data or now - token_data["timestamp"] > IDLE_TIMEOUT:
         raise HTTPException(status_code=401, detail="Token expired. Please re-authenticate.")
 
@@ -200,6 +197,9 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
 
     if token_data["remaining"] <= 0:
         raise HTTPException(status_code=403, detail="Token limit reached")
+
+    token_data["remaining"] -= 1
+    token_data["timestamp"] = now
 
     # 💥 Chaos can strike before validation
     chaos_result = chaos_roll(team)
