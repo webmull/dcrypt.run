@@ -87,8 +87,8 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
     <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
     <line x1="260" y1="110" x2="340" y2="70" stroke="url(#flowGradient)" />
     <line x1="340" y1="70" x2="420" y2="110" stroke="url(#flowGradient)" />
-    <line x1="420" y1="110" x2="500" y1="80" stroke="url(#flowGradient)" />
-    <line x1="500" y1="80" x2="580" y1="110" stroke="url(#flowGradient)" />
+    <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
+    <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
   </g>
   <g class="nodes">
     <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
@@ -109,7 +109,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 <a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
 
 <script>
-/* Floating particles */
+/* Particles */
 const field=document.getElementById("header-particles");
 const particles=[];
 const particleCount=25;
@@ -157,7 +157,7 @@ function processBannerQueue(){
   },4000);
 }
 
-/* Status + rendering */
+/* Bars + data */
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
 function updateBar(bar,value){
   const prev=parseFloat(bar.dataset.value)||0;
@@ -181,10 +181,9 @@ async function fetchStatus(){
     teams.sort((a,b)=>b.seen_count-a.seen_count);
     for(const t of teams){
       const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
-      const remainingPercent=Math.min((t.remaining/20)*100,100);
-      let chipClass="",chipLabel="Active";
-      if(seenPercent>=99&&!t.completed){chipClass="ready";chipLabel="Ready to Submit";}
-      if(t.completed){chipClass="completed";chipLabel="Completed";}
+      const remainingPercent=Math.max((t.remaining/t.max)*100,0);
+      const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
+      const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready to Submit":"Active");
       const card=document.createElement("div");
       card.className="team"+(t.completed?" complete":"");
       card.innerHTML=`
@@ -192,7 +191,7 @@ async function fetchStatus(){
         <div class="metric-group">
           <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
           <div class="bar"><div class="bar-fill seen" data-value="${seenPercent}"></div></div>
-          <div class="metric-label">Requests</div><div class="metric-value">${t.remaining}</div>
+          <div class="metric-label">Requests Left</div><div class="metric-value">${t.remaining}</div>
           <div class="bar"><div class="bar-fill requests" data-value="${remainingPercent}"></div></div>
           <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
           <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
