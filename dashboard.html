@@ -42,6 +42,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .team h2{margin:0;font-size:1.35rem;color:#ffda00;}
 .status-chip{padding:4px 10px;border-radius:6px;font-size:.85rem;font-weight:600;text-transform:uppercase;background:rgba(255,255,255,0.08);}
 .status-chip.completed{color:#fff;background:rgba(0,204,102,0.25);}
+.status-chip.ready{color:#ffda00;background:rgba(255,218,0,0.15);box-shadow:0 0 6px rgba(255,218,0,0.4);}
 .metric-group{background:rgba(255,255,255,0.04);border-radius:10px;padding:.8rem;display:grid;grid-template-columns:1fr 1fr;row-gap:6px;}
 .metric-label{opacity:.9;display:flex;align-items:center;gap:8px;}
 .metric-value{text-align:right;font-weight:600;}
@@ -86,8 +87,8 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
     <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
     <line x1="260" y1="110" x2="340" y2="70" stroke="url(#flowGradient)" />
     <line x1="340" y1="70" x2="420" y2="110" stroke="url(#flowGradient)" />
-    <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
-    <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
+    <line x1="420" y1="110" x2="500" y1="80" stroke="url(#flowGradient)" />
+    <line x1="500" y1="80" x2="580" y1="110" stroke="url(#flowGradient)" />
   </g>
   <g class="nodes">
     <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
@@ -108,7 +109,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 <a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
 
 <script>
-/* Particle field */
+/* Floating particles */
 const field=document.getElementById("header-particles");
 const particles=[];
 const particleCount=25;
@@ -134,7 +135,7 @@ function recycle(){
 }
 recycle();
 
-/* Completion banner queue */
+/* Banner queue */
 const banner=document.getElementById("completion-banner");
 let bannerQueue=[];let bannerActive=false;let shownTeams=new Set();
 function queueBanner(team){
@@ -156,7 +157,7 @@ function processBannerQueue(){
   },4000);
 }
 
-/* Dashboard data handling */
+/* Status + rendering */
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
 function updateBar(bar,value){
   const prev=parseFloat(bar.dataset.value)||0;
@@ -181,22 +182,25 @@ async function fetchStatus(){
     for(const t of teams){
       const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
       const remainingPercent=Math.min((t.remaining/20)*100,100);
+      let chipClass="",chipLabel="Active";
+      if(seenPercent>=99&&!t.completed){chipClass="ready";chipLabel="Ready to Submit";}
+      if(t.completed){chipClass="completed";chipLabel="Completed";}
       const card=document.createElement("div");
       card.className="team"+(t.completed?" complete":"");
       card.innerHTML=`
-        <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${t.completed?"completed":""}">${t.completed?"Completed":"Active"}</div></div>
+        <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${chipClass}">${chipLabel}</div></div>
         <div class="metric-group">
           <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
-          <div class="bar"><div class="bar-fill seen" data-value="0"></div></div>
+          <div class="bar"><div class="bar-fill seen" data-value="${seenPercent}"></div></div>
           <div class="metric-label">Requests</div><div class="metric-value">${t.remaining}</div>
-          <div class="bar"><div class="bar-fill requests" data-value="0"></div></div>
+          <div class="bar"><div class="bar-fill requests" data-value="${remainingPercent}"></div></div>
           <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
           <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
         </div>`;
       const fills=card.querySelectorAll('.bar-fill');
       container.appendChild(card);
-      if(seenPercent>0)updateBar(fills[0],seenPercent);
-      if(remainingPercent<100)updateBar(fills[1],remainingPercent);
+      updateBar(fills[0],seenPercent);
+      updateBar(fills[1],remainingPercent);
       if(t.completed)queueBanner(t.team);
     }
   }catch(e){console.error(e);}
