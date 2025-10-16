@@ -51,7 +51,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .metric-group {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
   background: rgba(255,255,255,0.04);
   border-radius: 10px;
   padding: 0.8rem;
@@ -60,13 +60,13 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 5px;
 }
 .metric-label {
   flex: 0 0 75px;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #ffda00;
+  color: #fff;
 }
 .bar {
   flex: 1;
@@ -74,7 +74,6 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
   background: rgba(255,255,255,0.15);
   border-radius: 4px;
   overflow: hidden;
-  margin: 0 3px;
 }
 .bar-fill {
   height: 100%;
@@ -85,11 +84,11 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 }
 .bar-fill.requests { background: #ffda00; }
 .metric-value {
-  flex: 0 0 54px;
+  flex: 0 0 50px;
   text-align: right;
   font-weight: 600;
   white-space: nowrap;
-  color: #fff;
+  color: #cdeac0;
 }
 
 /* Banner + Footer + Docs */
@@ -186,7 +185,7 @@ async function fetchStatus(){
       const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
       const maxTokens=t.max||t.tokens_issued||20;
       const remainingTokens=typeof t.remaining==="number"?t.remaining:maxTokens;
-      const remainingPercent=Math.max((remainingTokens/maxTokens)*100,0);
+      const remainingPercent=Math.min(Math.max((remainingTokens/maxTokens)*100,0),100);
       const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
       const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready to Submit":"Active");
 
