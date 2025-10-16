@@ -1,12 +1,11 @@
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse
-from fastapi.openapi.utils import get_openapi
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 import random, time, uuid, os, re, yaml
 
 app = FastAPI(title="Decrypt the Narrative API")
 
+# --- Load custom OpenAPI spec ---
 with open("openapi.yaml") as f:
     custom_spec = yaml.safe_load(f)
 
@@ -43,12 +42,34 @@ TEAM_DATA = {}
 CHAOS_EVENTS = {}
 COMPLETED_TEAMS = set()
 
-
 # -------------------------------------------------------------
 # Utility
 # -------------------------------------------------------------
 def current_time() -> float:
     return time.time()
+
+def validate_token(team: str, token: str, require_remaining: bool = True):
+    """Shared validator for token presence, expiry, and remaining count."""
+    if not team or not token:
+        raise HTTPException(status_code=400, detail="Missing team or token header")
+
+    token_data = TEAM_TOKENS.get(team)
+    now = current_time()
+
+    if not token_data:
+        raise HTTPException(status_code=401, detail="No active token found for team")
+
+    if now - token_data["timestamp"] > IDLE_TIMEOUT:
+        raise HTTPException(status_code=401, detail="Token expired. Please re-authenticate.")
+
+    if token_data["token"] != token:
+        raise HTTPException(status_code=403, detail="Invalid token for team")
+
+    if require_remaining and token_data["remaining"] <= 0:
+        raise HTTPException(status_code=403, detail="Token limit reached")
+
+    token_data["timestamp"] = now
+    return token_data
 
 def chaos_roll(team: str):
     """Inject controlled chaos into /fragment requests."""
@@ -158,12 +179,10 @@ def issue_token(request: Request, team: str = Header(None)):
     now = current_time()
     existing = TEAM_TOKENS.get(team)
 
-    # If still valid, reuse
     if existing and existing["remaining"] > 0:
         existing["timestamp"] = now
         return {"token": existing["token"], "team": team, "remaining": existing["remaining"]}
 
-    # Otherwise issue new token
     token = str(uuid.uuid4())
     TEAM_TOKENS[team] = {
         "token": token,
@@ -176,44 +195,25 @@ def issue_token(request: Request, team: str = Header(None)):
     data.setdefault("start_time", now)
     return {"token": token, "team": team, "remaining": TOKEN_LIMIT}
 
-
 # -------------------------------------------------------------
 # Fragment Endpoint (Chaos lives here)
 # -------------------------------------------------------------
 @app.get("/fragment")
 def get_fragment(request: Request, team: str = Header(None), token: str = Header(None)):
     """Return a random fragment or chaos response."""
-    if not team or not token:
-        raise HTTPException(status_code=400, detail="Missing team or token header")
+    token_data = validate_token(team, token)
 
-    token_data = TEAM_TOKENS.get(team)
-    now = current_time()
-    
-    if not token_data or token_data["token"] != token:
-        raise HTTPException(status_code=403, detail="Invalid or expired token")
-      
-    if not token_data or now - token_data["timestamp"] > IDLE_TIMEOUT:
-        raise HTTPException(status_code=401, detail="Token expired. Please re-authenticate.")
-
-    if token_data["token"] != token:
-        raise HTTPException(status_code=403, detail="Invalid token for team")
-
-    if token_data["remaining"] <= 0:
-        raise HTTPException(status_code=403, detail="Token limit reached")
-
-    token_data["remaining"] -= 1
-    token_data["timestamp"] = now
-
-    # 💥 Chaos can strike before validation
+    # Chaos may strike first
     chaos_result = chaos_roll(team)
     if chaos_result is not None:
         return chaos_result
 
-    TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 1, "start_time": now})
+    token_data["remaining"] -= 1
+
+    TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 1, "start_time": current_time()})
     TEAM_DATA[team]["seen_count"] += 1
 
     return random.choice(FRAGMENTS)
-
 
 # -------------------------------------------------------------
 # Validate Endpoint (no chaos)
@@ -221,31 +221,14 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
 @app.post("/validate")
 async def validate_submission(request: Request, team: str = Header(None), token: str = Header(None)):
     """Validate a team's submitted sentence against the canonical full text."""
-    if not team or not token:
-        raise HTTPException(status_code=400, detail="Missing team or token header")
-
-    token_data = TEAM_TOKENS.get(team)
-    if not token_data or now - token_data["timestamp"] > IDLE_TIMEOUT:
-        raise HTTPException(status_code=401, detail="Token expired. Please re-authenticate.")
-
-    if not token_data or token_data["token"] != token:
-        raise HTTPException(status_code=403, detail="Invalid or expired token")
-
-    if token_data["token"] != token:
-        raise HTTPException(status_code=403, detail="Invalid token for team")
-
-    if token_data["remaining"] <= 0:
-        raise HTTPException(status_code=403, detail="Token limit reached")
-
+    token_data = validate_token(team, token)
     token_data["remaining"] -= 1
-    token_data["timestamp"] = current_time()  
 
     body = await request.json()
     submitted_text = body.get("submission")
     if not submitted_text:
         raise HTTPException(status_code=400, detail="Missing submission")
 
-    # Normalize both sides: remove punctuation, lowercase, collapse spaces
     normalize = lambda s: re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
     canonical = normalize(FULL_TEXT)
     submission_clean = normalize(submitted_text)
@@ -253,7 +236,6 @@ async def validate_submission(request: Request, team: str = Header(None), token:
     if submission_clean != canonical:
         raise HTTPException(status_code=400, detail="Incorrect submission")
 
-    # ✅ Mark completion and record timing
     TEAM_DATA.setdefault(team, {}).setdefault("completed_time", time.time())
     COMPLETED_TEAMS.add(team)
 
@@ -273,7 +255,6 @@ def get_status():
     now = current_time()
     teams_out = []
 
-    # 🧹 Clean up idle teams (30+ min inactivity)
     idle_cutoff = now - IDLE_TIMEOUT
     to_remove = [team for team, tok in TEAM_TOKENS.items() if tok["timestamp"] < idle_cutoff]
     for team in to_remove:
@@ -308,9 +289,8 @@ def get_status():
         "total_words": len(WORDS),
     }
 
-
 # -------------------------------------------------------------
-# Dashboard HTML
+# Dashboard HTML + Redirect
 # -------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
