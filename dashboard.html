@@ -47,15 +47,49 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .status-chip.completed{color:#fff;background:rgba(0,204,102,0.25);}
 .status-chip.ready{color:#ffda00;background:rgba(255,218,0,0.15);box-shadow:0 0 6px rgba(255,218,0,0.4);}
 
-/* Metrics */
-.metric-group{display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,0.04);border-radius:10px;padding:.8rem;}
-.metric-row{display:flex;flex-direction:column;gap:4px;}
-.metric-top{display:flex;align-items:center;justify-content:space-between;}
-.metric-label{opacity:.9;font-weight:500;}
-.metric-value{font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;}
-.bar{width:100%;height:8px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;}
-.bar-fill{height:100%;transition:width 0.6s ease-in-out;transform-origin:left center;background:#00cc66;width:0;}
-.bar-fill.requests{background:#ffda00;}
+/* Metrics - inline bars */
+.metric-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+.metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.metric-label {
+  flex: 0 0 70px;
+  opacity: .9;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+.bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 4px;
+}
+.bar-fill {
+  height: 100%;
+  transition: width 0.6s ease-in-out;
+  transform-origin: left center;
+  background: #00cc66;
+  width: 0;
+}
+.bar-fill.requests { background: #ffda00; }
+.metric-value {
+  flex: 0 0 48px;
+  text-align: right;
+  font-weight: 600;
+  white-space: nowrap;
+}
 
 /* Banner + Footer + Docs */
 #completion-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -67,8 +101,8 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 #docs-link{position:fixed;bottom:14px;right:18px;background:rgba(0,122,69,0.9);color:#ffda00;text-decoration:none;font-weight:600;font-size:0.9rem;padding:7px 12px;border-radius:7px;box-shadow:0 0 10px rgba(0,0,0,0.3);transition:all 0.3s ease;z-index:50;}
 #docs-link:hover{background:#00cc66;color:#fff;box-shadow:0 0 12px rgba(0,255,120,0.6);}
 footer{text-align:center;font-size:0.85rem;color:rgba(255,255,255,0.45);padding:10px 0 14px;letter-spacing:0.3px;user-select:none;opacity:0;animation:fadeIn 0.8s ease forwards;animation-delay:0.15s;}
-footer span{color:#ffda00;font-weight:600;}
-footer:hover{color:rgba(255,255,255,0.8);}
+footer a{color:#ffda00;font-weight:600;text-decoration:none;transition:color 0.3s ease;}
+footer a:hover{color:#00ff99;}
 @keyframes fadeIn{to{opacity:1;}}
 </style>
 </head>
@@ -89,12 +123,12 @@ footer:hover{color:rgba(255,255,255,0.8);}
     </defs>
     <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="38">Decrypt the Narrative</text>
     <g class="lines">
-      <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
-      <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
-      <line x1="260" y1="110" x2="340" y2="70" stroke="url(#flowGradient)" />
-      <line x1="340" y1="70" x2="420" y2="110" stroke="url(#flowGradient)" />
-      <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
-      <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
+      <line x1="100" y1="110" x2="180" y1="80" stroke="url(#flowGradient)" />
+      <line x1="180" y1="80" x2="260" y1="110" stroke="url(#flowGradient)" />
+      <line x1="260" y1="110" x2="340" y1="70" stroke="url(#flowGradient)" />
+      <line x1="340" y1="70" x2="420" y1="110" stroke="url(#flowGradient)" />
+      <line x1="420" y1="110" x2="500" y1="80" stroke="url(#flowGradient)" />
+      <line x1="500" y1="80" x2="580" y1="110" stroke="url(#flowGradient)" />
     </g>
     <g class="nodes">
       <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
@@ -113,7 +147,7 @@ footer:hover{color:rgba(255,255,255,0.8);}
 <div id="teams"></div>
 <div id="completion-banner"></div>
 <a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
-<footer>Designed by <span>Adam Davis</span> · <span id="version">v1.0.0</span></footer>
+<footer>Designed by <a href="https://adamdavis.co.uk" target="_blank" rel="noopener noreferrer">Adam Davis</a></footer>
 
 <script>
 /* Floating particles */
@@ -131,7 +165,6 @@ function processBannerQueue(){if(bannerActive||bannerQueue.length===0)return;ban
 
 /* Data + Bars */
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
-function updateBar(bar,value){value=Math.min(Math.max(value,0),100);bar.style.width=value+'%';bar.dataset.value=value;}
 let statusBusy=false;
 async function fetchStatus(){
   if(statusBusy)return;
@@ -161,10 +194,10 @@ async function fetchStatus(){
       card.innerHTML=`
         <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${chipClass}">${chipLabel}</div></div>
         <div class="metric-group">
-          <div class="metric-row"><div class="metric-top"><span class="metric-label">Seen</span><span class="metric-value">${seenPercent.toFixed(0)}%</span></div><div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div></div>
-          <div class="metric-row"><div class="metric-top"><span class="metric-label">Requests</span><span class="metric-value">${remainingTokens}</span></div><div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div></div>
-          <div class="metric-row"><div class="metric-top"><span class="metric-label">Chaos</span><span class="metric-value">${t.chaos||0}</span></div></div>
-          <div class="metric-row"><div class="metric-top"><span class="metric-label">Duration</span><span class="metric-value">${formatDuration(t.duration)}</span></div></div>
+          <div class="metric-row"><span class="metric-label">Seen</span><div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div><span class="metric-value">${seenPercent.toFixed(0)}%</span></div>
+          <div class="metric-row"><span class="metric-label">Requests</span><div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div><span class="metric-value">${remainingTokens}</span></div>
+          <div class="metric-row"><span class="metric-label">Chaos</span><span class="metric-value">${t.chaos||0}</span></div>
+          <div class="metric-row"><span class="metric-label">Duration</span><span class="metric-value">${formatDuration(t.duration)}</span></div>
         </div>`;
       container.appendChild(card);
       if(t.completed)queueBanner(t.team);
