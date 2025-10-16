@@ -12,7 +12,7 @@ body {
   display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;
 }
 
-/* Header + Particles */
+/* Header */
 header{position:relative;display:flex;justify-content:center;align-items:center;flex-direction:column;margin-top:.8rem;margin-bottom:.5rem;}
 header svg.title{width:760px;max-width:95%;height:150px;}
 header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:3px;fill:#ffda00;
@@ -20,11 +20,6 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 @keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
 .lines line{stroke-width:2.5;opacity:.95;stroke-linecap:round;}
 .nodes circle{fill:#00ff99;opacity:.9;filter:drop-shadow(0 0 4px #00ff99);}
-#header-particles{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0;pointer-events:none;}
-.particle{position:absolute;width:5px;height:5px;border-radius:50%;
-  background:radial-gradient(circle at 30% 30%,#ffda00 0%,#00ff99 100%);
-  opacity:.4;animation:float 12s linear infinite;}
-@keyframes float{0%{transform:translateY(0) translateX(0) scale(1);}50%{transform:translateY(-120px) translateX(40px) scale(1.2);}100%{transform:translateY(-240px) translateX(0) scale(1);}}
 
 /* Summary */
 #summary{display:flex;justify-content:center;flex-wrap:wrap;gap:1.4rem;color:#cdeac0;margin:.6rem auto 1.2rem;text-align:center;}
@@ -33,7 +28,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .summary-item span:first-of-type{opacity:.9;font-weight:500;}
 .summary-value b{color:#fff;font-weight:700;text-shadow:0 0 4px rgba(255,255,255,0.2);}
 
-/* Grid + Tiles */
+/* Tiles */
 #teams{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,340px));gap:1.2rem;padding:1rem;justify-content:center;max-width:1200px;margin:0 auto 2rem;}
 .team{position:relative;border-radius:16px;overflow:hidden;background:rgba(0,104,55,0.9);backdrop-filter:blur(8px);padding:1.1rem;
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 4px 10px rgba(0,0,0,0.25);
@@ -47,11 +42,11 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .status-chip.completed{color:#fff;background:rgba(0,204,102,0.25);}
 .status-chip.ready{color:#ffda00;background:rgba(255,218,0,0.15);box-shadow:0 0 6px rgba(255,218,0,0.4);}
 
-/* Metrics - inline bars refined */
+/* Metrics */
 .metric-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   background: rgba(255,255,255,0.04);
   border-radius: 10px;
   padding: 0.8rem;
@@ -60,19 +55,19 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 5px;
+  gap: 6px;
 }
 .metric-label {
-  flex: 0 0 75px;
+  flex: 0 0 80px;
   font-weight: 700;
   font-size: 0.95rem;
   color: #fff;
 }
 .bar {
   flex: 1;
-  height: 8px;
+  height: 14px;
   background: rgba(255,255,255,0.15);
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
 }
 .bar-fill {
@@ -84,7 +79,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 }
 .bar-fill.requests { background: #ffda00; }
 .metric-value {
-  flex: 0 0 50px;
+  flex: 0 0 55px;
   text-align: right;
   font-weight: 600;
   white-space: nowrap;
@@ -109,7 +104,6 @@ footer a:hover{color:#00ff99;}
 <body>
 
 <header>
-  <div id="header-particles"></div>
   <svg class="title" viewBox="0 0 700 160">
     <defs>
       <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -123,16 +117,10 @@ footer a:hover{color:#00ff99;}
     </defs>
     <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="38">Decrypt the Narrative</text>
     <g class="lines">
-      <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
-      <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
-      <line x1="260" y1="110" x2="340" y2="70" stroke="url(#flowGradient)" />
-      <line x1="340" y1="70" x2="420" y2="110" stroke="url(#flowGradient)" />
-      <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
-      <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
+      <line x1="100" y1="110" x2="580" y2="110" stroke="url(#flowGradient)" />
     </g>
     <g class="nodes">
-      <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
-      <circle cx="340" cy="70" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
+      <circle cx="100" cy="110" r="4"/><circle cx="580" cy="110" r="4"/>
     </g>
   </svg>
 </header>
@@ -147,67 +135,34 @@ footer a:hover{color:#00ff99;}
 <div id="teams"></div>
 <div id="completion-banner"></div>
 <a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
-<footer>Designed by <a href="https://adamdavis.co.uk" target="_blank" rel="noopener noreferrer">Adam Davis</a></footer>
+<footer>Designed by <a href="https://adamdavis.co.uk" target="_blank">Adam Davis</a></footer>
 
 <script>
-/* Floating particles */
-const field=document.getElementById("header-particles");
-const particles=[];
-for(let i=0;i<25;i++){const p=document.createElement("div");p.className="particle";resetParticle(p,true);field.appendChild(p);particles.push(p);}
-function resetParticle(p,init=false){p.style.left=Math.random()*100+"%";p.style.top=init?(Math.random()*100)+"%":"100%";p.style.animationDuration=10+Math.random()*6+"s";}
-function recycle(){for(const p of particles){const top=parseFloat(p.style.top);if(top<-5){resetParticle(p);}else{p.style.top=(top-0.2)+"%";}}requestAnimationFrame(recycle);}recycle();
-
-/* Banner queue */
-const banner=document.getElementById("completion-banner");
-let bannerQueue=[];let bannerActive=false;let shownTeams=new Set();
-function queueBanner(team){if(shownTeams.has(team))return;shownTeams.add(team);bannerQueue.push(team);processBannerQueue();}
-function processBannerQueue(){if(bannerActive||bannerQueue.length===0)return;bannerActive=true;const team=bannerQueue.shift();banner.innerText=`🎉 ${team} has completed the challenge! 🎉`;banner.classList.add("show");setTimeout(()=>{banner.classList.remove("show");bannerActive=false;setTimeout(processBannerQueue,600);},4000);}
-
-/* Data + Bars */
-function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
-let statusBusy=false;
 async function fetchStatus(){
-  if(statusBusy)return;
-  statusBusy=true;
-  try{
-    const res=await fetch("/status",{cache:"no-store"});
-    const data=await res.json();
-    const teams=data.teams||[];
-    document.getElementById("count-teams").innerHTML=`<b>${teams.length}</b>`;
-    document.getElementById("count-tokens").innerHTML=`<b>${teams.reduce((s,t)=>s+(t.tokens_issued||0),0)}</b>`;
-    document.getElementById("count-chaos").innerHTML=`<b>${data.total_chaos||0}</b>`;
-    document.getElementById("count-completed").innerHTML=`<b>${teams.filter(t=>t.completed).length}</b>`;
-    const container=document.getElementById("teams");container.innerHTML="";
-    const totalWords=data.total_words||50;
-    const defaultLimit=20; // fallback
-
-    teams.sort((a,b)=>b.seen_count-a.seen_count);
-    for(const t of teams){
-      const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
-      const maxTokens=t.max||t.max_tokens||defaultLimit;
-      const remainingTokens=(typeof t.remaining==="number")?t.remaining:maxTokens;
-      const used=Math.max(0,Math.min(maxTokens-remainingTokens,maxTokens));
-      const remainingPercent=((maxTokens-used)/maxTokens)*100;
-
-      const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
-      const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready to Submit":"Active");
-
-      const card=document.createElement("div");
-      card.className="team"+(t.completed?" complete":"");
-      card.innerHTML=`
-        <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${chipClass}">${chipLabel}</div></div>
-        <div class="metric-group">
-          <div class="metric-row"><span class="metric-label">Seen</span><div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div><span class="metric-value">${seenPercent.toFixed(0)}%</span></div>
-          <div class="metric-row"><span class="metric-label">Requests</span><div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div><span class="metric-value">${remainingTokens}</span></div>
-          <div class="metric-row"><span class="metric-label">Chaos</span><span class="metric-value">${t.chaos||0}</span></div>
-          <div class="metric-row"><span class="metric-label">Duration</span><span class="metric-value">${formatDuration(t.duration)}</span></div>
-        </div>`;
-      container.appendChild(card);
-      if(t.completed)queueBanner(t.team);
-    }
-  }catch(e){console.error(e);}
-  finally{statusBusy=false;setTimeout(fetchStatus,1500);}
+  const res=await fetch("/status",{cache:"no-store"});
+  const data=await res.json();
+  const teams=data.teams||[];
+  const container=document.getElementById("teams");
+  container.innerHTML="";
+  const totalWords=data.total_words||50;
+  const defaultLimit=20;
+  for(const t of teams){
+    const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
+    const maxTokens=t.max||t.max_tokens||defaultLimit;
+    const remaining=t.remaining??maxTokens;
+    const remainingPercent=Math.max((remaining/maxTokens)*100,0);
+    const card=document.createElement("div");
+    card.className="team";
+    card.innerHTML=`
+      <div class="team-header"><h2>${t.team}</h2></div>
+      <div class="metric-group">
+        <div class="metric-row"><span class="metric-label">Seen</span><div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div><span class="metric-value">${seenPercent.toFixed(0)}%</span></div>
+        <div class="metric-row"><span class="metric-label">Requests</span><div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div><span class="metric-value">${remaining}</span></div>
+      </div>`;
+    container.appendChild(card);
+  }
 }
+setInterval(fetchStatus,1500);
 fetchStatus();
 </script>
 </body>
