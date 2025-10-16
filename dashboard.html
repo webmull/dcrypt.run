@@ -32,7 +32,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .summary-icon{width:clamp(22px,2.2vw,26px);height:clamp(22px,2.2vw,26px);stroke:#ffda00;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;}
 .summary-value b{color:#fff;font-weight:700;text-shadow:0 0 4px rgba(255,255,255,0.2);}
 
-/* Grid now centered with max width */
+/* Grid */
 #teams {
   flex:1;
   display:grid;
@@ -84,6 +84,25 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
   transition:all 0.3s ease;z-index:50;
 }
 #docs-link:hover {background:#00cc66;color:#fff;box-shadow:0 0 12px rgba(0,255,120,0.6);}
+
+/* Footer */
+footer {
+  text-align:center;
+  font-size:0.85rem;
+  color:rgba(255,255,255,0.45);
+  padding:8px 0 14px;
+  letter-spacing:0.3px;
+  user-select:none;
+  opacity:0;
+  animation:fadeIn 2s ease forwards;
+  animation-delay:1.2s;
+}
+footer span {
+  color:#ffda00;
+  font-weight:600;
+}
+footer:hover {color:rgba(255,255,255,0.8);}
+@keyframes fadeIn {to{opacity:1;}}
 </style>
 </head>
 <body>
@@ -127,6 +146,8 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 <div id="teams"></div>
 <div id="completion-banner"></div>
 <a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
+
+<footer>Designed by <span>Adam Davis</span></footer>
 
 <script>
 /* Floating particles */
