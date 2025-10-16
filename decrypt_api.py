@@ -239,7 +239,6 @@ async def validate_submission(request: Request, team: str = Header(None), token:
     submission_clean = normalize(submitted_text)
 
     if submission_clean != canonical:
-        CHAOS_EVENTS.setdefault(team, []).append({"ts": time.time(), "type": "invalid_submission"})
         raise HTTPException(status_code=400, detail="Incorrect submission")
 
     # ✅ Mark completion and record timing
