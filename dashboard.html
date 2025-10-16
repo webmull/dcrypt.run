@@ -94,13 +94,10 @@ footer {
   letter-spacing:0.3px;
   user-select:none;
   opacity:0;
-  animation:fadeIn 2s ease forwards;
-  animation-delay:1.2s;
+  animation:fadeIn 1.2s ease forwards;
+  animation-delay:0.6s;
 }
-footer span {
-  color:#ffda00;
-  font-weight:600;
-}
+footer span {color:#ffda00;font-weight:600;}
 footer:hover {color:rgba(255,255,255,0.8);}
 @keyframes fadeIn {to{opacity:1;}}
 </style>
@@ -152,63 +149,19 @@ footer:hover {color:rgba(255,255,255,0.8);}
 <script>
 /* Floating particles */
 const field=document.getElementById("header-particles");
-const particles=[];
-const particleCount=25;
-for(let i=0;i<particleCount;i++){
-  const p=document.createElement("div");
-  p.className="particle";
-  resetParticle(p,true);
-  field.appendChild(p);
-  particles.push(p);
-}
-function resetParticle(p,init=false){
-  p.style.left=Math.random()*100+"%";
-  p.style.top=init?(Math.random()*100)+"%":"100%";
-  p.style.animationDuration=10+Math.random()*6+"s";
-}
-function recycle(){
-  for(const p of particles){
-    const top=parseFloat(p.style.top);
-    if(top<-5){resetParticle(p);}
-    else{p.style.top=(top-0.2)+"%";}
-  }
-  requestAnimationFrame(recycle);
-}
-recycle();
+const particles=[];for(let i=0;i<25;i++){const p=document.createElement("div");p.className="particle";resetParticle(p,true);field.appendChild(p);particles.push(p);}
+function resetParticle(p,init=false){p.style.left=Math.random()*100+"%";p.style.top=init?(Math.random()*100)+"%":"100%";p.style.animationDuration=10+Math.random()*6+"s";}
+function recycle(){for(const p of particles){const top=parseFloat(p.style.top);if(top<-5){resetParticle(p);}else{p.style.top=(top-0.2)+"%";}}requestAnimationFrame(recycle);}recycle();
 
 /* Banner queue */
 const banner=document.getElementById("completion-banner");
 let bannerQueue=[];let bannerActive=false;let shownTeams=new Set();
-function queueBanner(team){
-  if(shownTeams.has(team))return;
-  shownTeams.add(team);
-  bannerQueue.push(team);
-  processBannerQueue();
-}
-function processBannerQueue(){
-  if(bannerActive||bannerQueue.length===0)return;
-  bannerActive=true;
-  const team=bannerQueue.shift();
-  banner.innerText=`🎉 ${team} has completed the challenge! 🎉`;
-  banner.classList.add("show");
-  setTimeout(()=>{
-    banner.classList.remove("show");
-    bannerActive=false;
-    setTimeout(processBannerQueue,600);
-  },4000);
-}
+function queueBanner(team){if(shownTeams.has(team))return;shownTeams.add(team);bannerQueue.push(team);processBannerQueue();}
+function processBannerQueue(){if(bannerActive||bannerQueue.length===0)return;bannerActive=true;const team=bannerQueue.shift();banner.innerText=`🎉 ${team} has completed the challenge! 🎉`;banner.classList.add("show");setTimeout(()=>{banner.classList.remove("show");bannerActive=false;setTimeout(processBannerQueue,600);},4000);}
 
 /* Bars + data */
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
-function updateBar(bar,value){
-  value=Math.min(Math.max(value,0),100);
-  const prev=parseFloat(bar.dataset.value);
-  if(isNaN(prev)){bar.style.width=value+'%';bar.dataset.value=value;return;}
-  if(Math.abs(value-prev)>0.1){
-    bar.style.width=value+'%';
-    bar.dataset.value=value;
-  }
-}
+function updateBar(bar,value){value=Math.min(Math.max(value,0),100);const prev=parseFloat(bar.dataset.value);if(isNaN(prev)){bar.style.width=value+'%';bar.dataset.value=value;return;}if(Math.abs(value-prev)>0.1){bar.style.width=value+'%';bar.dataset.value=value;}}
 async function fetchStatus(){
   try{
     const res=await fetch("/status",{cache:"no-store"});
@@ -234,10 +187,10 @@ async function fetchStatus(){
       card.innerHTML=`
         <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${chipClass}">${chipLabel}</div></div>
         <div class="metric-group">
-          <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
-          <div class="bar"><div class="bar-fill seen" data-value="${seenPercent}"></div></div>
+          <div class="metric-label">Seen</div><div class="metric-value">${t.seen_count}</div>
+          <div class="bar"><div class="bar-fill seen" data-value="${seenPercent}" style="width:${seenPercent}%"></div></div>
           <div class="metric-label">Requests Left</div><div class="metric-value">${remainingTokens}</div>
-          <div class="bar"><div class="bar-fill requests" data-value="${remainingPercent}"></div></div>
+          <div class="bar"><div class="bar-fill requests" data-value="${remainingPercent}" style="width:${remainingPercent}%"></div></div>
           <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
           <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
         </div>`;
