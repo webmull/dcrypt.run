@@ -51,7 +51,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .status-chip.completed{color:#fff;background:rgba(0,204,102,0.25);}
 .status-chip.ready{color:#ffda00;background:rgba(255,218,0,0.15);box-shadow:0 0 6px rgba(255,218,0,0.4);}
 
-/* Metrics - inline bars refined */
+/* Metrics */
 .metric-group {
   display: flex;
   flex-direction: column;
@@ -74,10 +74,12 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 }
 .bar {
   flex: 1;
-  height: 14px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 6px;
+  height: 16px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
   overflow: hidden;
+  width: 100%;
 }
 .bar-fill {
   height: 100%;
