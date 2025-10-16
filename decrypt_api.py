@@ -203,12 +203,12 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
     """Return a random fragment or chaos response."""
     token_data = validate_token(team, token)
 
+    token_data["remaining"] -= 1
+    
     # Chaos may strike first
     chaos_result = chaos_roll(team)
     if chaos_result is not None:
         return chaos_result
-
-    token_data["remaining"] -= 1
 
     TEAM_DATA.setdefault(team, {"seen_count": 0, "submissions": 0, "tokens_issued": 1, "start_time": current_time()})
     TEAM_DATA[team]["seen_count"] += 1
