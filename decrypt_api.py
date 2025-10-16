@@ -225,6 +225,9 @@ async def validate_submission(request: Request, team: str = Header(None), token:
     if not token_data or token_data["token"] != token:
         raise HTTPException(status_code=403, detail="Invalid or expired token")
 
+    token_data["remaining"] -= 1
+    token_data["timestamp"] = now  
+
     body = await request.json()
     submitted_text = body.get("submission")
     if not submitted_text:
