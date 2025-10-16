@@ -222,8 +222,14 @@ async def validate_submission(request: Request, team: str = Header(None), token:
         raise HTTPException(status_code=400, detail="Missing team or token header")
 
     token_data = TEAM_TOKENS.get(team)
-    if not token_data or token_data["token"] != token:
-        raise HTTPException(status_code=403, detail="Invalid or expired token")
+    if not token_data or now - token_data["timestamp"] > IDLE_TIMEOUT:
+        raise HTTPException(status_code=401, detail="Token expired. Please re-authenticate.")
+
+    if token_data["token"] != token:
+        raise HTTPException(status_code=403, detail="Invalid token for team")
+
+    if token_data["remaining"] <= 0:
+        raise HTTPException(status_code=403, detail="Token limit reached")
 
     token_data["remaining"] -= 1
     token_data["timestamp"] = current_time()  
