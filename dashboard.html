@@ -223,8 +223,10 @@ async function fetchStatus(){
 
     teams.sort((a,b)=>b.seen_count-a.seen_count);
     for(const t of teams){
-      const seenPercent=totalWords>0?Math.max((t.seen_count/totalWords)*100,0):0;
-      const remainingPercent=t.remaining&&t.max?Math.max((t.remaining/t.max)*100,0):100;
+      const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
+      const maxTokens=t.max||t.tokens_issued||20;
+      const remainingTokens=typeof t.remaining==="number"?t.remaining:maxTokens;
+      const remainingPercent=Math.max((remainingTokens/maxTokens)*100,0);
       const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
       const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready to Submit":"Active");
       const card=document.createElement("div");
@@ -234,7 +236,7 @@ async function fetchStatus(){
         <div class="metric-group">
           <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
           <div class="bar"><div class="bar-fill seen" data-value="${seenPercent}"></div></div>
-          <div class="metric-label">Requests Left</div><div class="metric-value">${t.remaining}</div>
+          <div class="metric-label">Requests Left</div><div class="metric-value">${remainingTokens}</div>
           <div class="bar"><div class="bar-fill requests" data-value="${remainingPercent}"></div></div>
           <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
           <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
