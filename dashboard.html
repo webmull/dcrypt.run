@@ -55,7 +55,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .metric-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   background: rgba(255,255,255,0.04);
   border-radius: 10px;
   padding: 0.8rem;
@@ -63,21 +63,23 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 .metric-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 8px;
 }
 .metric-label {
-  flex: 0 0 75px;
+  flex: 0 0 70px;
   font-weight: 700;
   font-size: 0.95rem;
   color: #fff;
 }
 .bar {
-  flex: 1 1 100%;
+  flex: 1;
   height: 18px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.25);
   border-radius: 8px;
   overflow: hidden;
+  margin-right: 6px;
 }
 .bar-fill {
   height: 100%;
@@ -88,7 +90,7 @@ header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:upperc
 }
 .bar-fill.requests { background: #ffda00; }
 .metric-value {
-  flex: 0 0 65px;
+  flex: 0 0 60px;
   text-align: right;
   font-weight: 600;
   white-space: nowrap;
