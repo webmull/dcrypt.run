@@ -179,13 +179,16 @@ async function fetchStatus(){
     document.getElementById("count-completed").innerHTML=`<b>${teams.filter(t=>t.completed).length}</b>`;
     const container=document.getElementById("teams");container.innerHTML="";
     const totalWords=data.total_words||50;
+    const defaultLimit=20; // fallback
 
     teams.sort((a,b)=>b.seen_count-a.seen_count);
     for(const t of teams){
       const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
-      const maxTokens=t.max||t.tokens_issued||20;
-      const remainingTokens=typeof t.remaining==="number"?t.remaining:maxTokens;
-      const remainingPercent=Math.min(Math.max((remainingTokens/maxTokens)*100,0),100);
+      const maxTokens=t.max||t.max_tokens||defaultLimit;
+      const remainingTokens=(typeof t.remaining==="number")?t.remaining:maxTokens;
+      const used=Math.max(0,Math.min(maxTokens-remainingTokens,maxTokens));
+      const remainingPercent=((maxTokens-used)/maxTokens)*100;
+
       const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
       const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready to Submit":"Active");
 
