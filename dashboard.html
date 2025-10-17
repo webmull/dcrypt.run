@@ -1,134 +1,259 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Decrypt the Narrative – Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
 body {
-  margin:0;background:#004b2b;color:#f7f7f7;
-  font-family:'Inter',sans-serif;
-  display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;
+  margin: 0;
+  background: #004b2b;
+  color: #f7f7f7;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* Header + Particles */
-header{position:relative;display:flex;justify-content:center;align-items:center;flex-direction:column;margin-top:.8rem;margin-bottom:.5rem;}
-header svg.title{width:760px;max-width:95%;height:150px;}
-header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:3px;fill:#ffda00;
-  filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));animation:textGlow 5s ease-in-out infinite;font-size:40px;}
-@keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
-.lines line{stroke-width:2.5;opacity:.95;stroke-linecap:round;}
-.nodes circle{fill:#00ff99;opacity:.9;filter:drop-shadow(0 0 4px #00ff99);}
-#header-particles{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0;pointer-events:none;}
-.particle{position:absolute;width:5px;height:5px;border-radius:50%;
-  background:radial-gradient(circle at 30% 30%,#ffda00 0%,#00ff99 100%);
-  opacity:.5;animation:float 14s linear infinite;}
-@keyframes float{
-  0%{transform:translateY(0) translateX(0) scale(1);}
-  50%{transform:translateY(-120px) translateX(40px) scale(1.2);}
-  100%{transform:translateY(-240px) translateX(0) scale(1);}
+/* Header */
+header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin-top: .8rem;
+  margin-bottom: .5rem;
+}
+header svg.title {
+  width: 760px;
+  max-width: 95%;
+  height: 150px;
+}
+header text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  fill: #ffda00;
+  filter: drop-shadow(0 0 8px rgba(255,218,0,0.6));
+  animation: textGlow 5s ease-in-out infinite;
+  font-size: 40px;
+}
+@keyframes textGlow {
+  0%,100% {filter: drop-shadow(0 0 8px rgba(255,218,0,0.5));}
+  50% {filter: drop-shadow(0 0 24px rgba(255,218,0,0.9));}
+}
+.lines line {
+  stroke-width: 2.5;
+  opacity: .95;
+  stroke-linecap: round;
+}
+.nodes circle {
+  fill: #00ff99;
+  opacity: .9;
+  filter: drop-shadow(0 0 4px #00ff99);
+}
+#header-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+.particle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffda00 0%, #00ff99 100%);
+  opacity: .5;
+  animation: float 14s linear infinite;
+}
+@keyframes float {
+  0% {transform: translateY(0) translateX(0) scale(1);}
+  50% {transform: translateY(-120px) translateX(40px) scale(1.2);}
+  100% {transform: translateY(-240px) translateX(0) scale(1);}
 }
 
 /* Summary */
-#summary{display:flex;justify-content:center;flex-wrap:wrap;gap:1.4rem;color:#cdeac0;margin:.6rem auto 1.2rem;text-align:center;}
-.summary-item{display:flex;align-items:center;gap:8px;font-size:clamp(1rem,1.9vw,1.4rem);font-weight:600;}
-.summary-icon{width:clamp(22px,2.2vw,28px);height:clamp(22px,2.2vw,28px);stroke:#ffda00;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;}
-.summary-value b{color:#fff;font-weight:700;text-shadow:0 0 4px rgba(255,255,255,0.2);}
+#summary {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: #cdeac0;
+  margin: .6rem auto 1rem;
+  text-align: center;
+}
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(1rem,1.7vw,1.3rem);
+  font-weight: 600;
+}
+.summary-icon {
+  width: 24px;
+  height: 24px;
+  stroke: #ffda00;
+  stroke-width: 2;
+  fill: none;
+}
 
 /* Grid + Tiles */
 #teams {
-  flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 360px));
-  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.9rem;
   padding: 0.8rem;
-  justify-content: center;
-  max-width: 1200px;
-  margin: 0 auto 1.2rem;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 1rem;
 }
 .team {
-  position: relative;
-  border-radius: 14px;
-  overflow: hidden;
   background: rgba(0,104,55,0.9);
-  backdrop-filter: blur(8px);
-  padding: 1rem;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 3px 8px rgba(0,0,0,0.25);
-  transition: transform .25s ease, box-shadow .3s ease;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  padding: 0.8rem 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 0.6rem;
-  min-height: 180px;
-  height: auto;
+  gap: 0.4rem;
+  transition: transform .2s ease;
 }
-.team:hover{transform:translateY(-2px);}
-.team::after{content:"";position:absolute;top:0;left:0;width:100%;height:5px;background:linear-gradient(90deg,#00ff99,#ffda00,#00cc66);opacity:.9;}
-.team.complete{background:rgba(0,122,69,0.95);border:1px solid rgba(0,204,102,0.4);}
-.team-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem;}
-.team h2{margin:0;font-size:1.25rem;color:#ffda00;}
-.status-chip{padding:4px 10px;border-radius:6px;font-size:.85rem;font-weight:600;text-transform:uppercase;background:rgba(255,255,255,0.08);}
-.status-chip.completed{color:#fff;background:rgba(0,204,102,0.25);}
-.status-chip.ready{color:#ffda00;background:rgba(255,218,0,0.15);box-shadow:0 0 6px rgba(255,218,0,0.4);}
+.team:hover {transform: translateY(-2px);}
+.team::after {
+  content: "";
+  height: 4px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(90deg, #00ff99, #ffda00, #00cc66);
+  margin-bottom: 0.5rem;
+}
+.team.complete {
+  background: rgba(0,122,69,0.95);
+  border: 1px solid rgba(0,204,102,0.4);
+}
+
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.team h2 {
+  font-size: 1.1rem;
+  color: #ffda00;
+  margin: 0;
+}
+.status-chip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: .8rem;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.08);
+}
+.status-chip.completed {
+  color: #fff;
+  background: rgba(0,204,102,0.25);
+}
+.status-chip.ready {
+  color: #ffda00;
+  background: rgba(255,218,0,0.15);
+}
 
 /* Metrics */
 .metric-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: rgba(255,255,255,0.04);
-  border-radius: 8px;
-  padding: 0.6rem 0.8rem;
-}
-.metric-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto;
+  row-gap: 4px;
+  column-gap: 8px;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  font-size: .9rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 0.5rem;
 }
 .metric-label {
-  flex: 0 0 75px;
   font-weight: 700;
-  font-size: 0.95rem;
   color: #fff;
 }
+.metric-value {
+  text-align: right;
+  font-weight: 600;
+  color: #cdeac0;
+}
 .bar {
-  flex: 1;
-  height: 18px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 8px;
+  grid-column: span 2;
+  height: 10px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 6px;
   overflow: hidden;
+  margin-bottom: 4px;
 }
 .bar-fill {
   height: 100%;
-  transition: width 0.6s ease-in-out;
-  transform-origin: left center;
-  background: #00cc66;
   width: 0;
+  transition: width 0.4s ease;
 }
-.bar-fill.requests { background: #ffda00; }
-.metric-value {
-  flex: 0 0 60px;
-  text-align: right;
-  font-weight: 600;
-  white-space: nowrap;
-  color: #cdeac0;
-}
+.bar-fill.seen {background: #00cc66;}
+.bar-fill.requests {background: #ffda00;}
 
-/* Banner + Footer + Docs */
-#completion-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:rgba(0,75,43,0.95);color:#ffda00;font-family:'Inter',sans-serif;
-  font-size:clamp(1.5rem,3vw,2.4rem);font-weight:700;padding:1rem 2rem;border-radius:12px;
-  box-shadow:0 0 20px rgba(255,218,0,0.6);opacity:0;z-index:9999;pointer-events:none;
-  transition:opacity .4s ease,transform .4s ease;}
-#completion-banner.show{opacity:1;transform:translate(-50%,-50%) scale(1.05);}
-#docs-link{position:fixed;bottom:14px;right:18px;background:rgba(0,122,69,0.9);color:#ffda00;text-decoration:none;font-weight:600;font-size:0.9rem;padding:7px 12px;border-radius:7px;box-shadow:0 0 10px rgba(0,0,0,0.3);transition:all 0.3s ease;z-index:50;}
-#docs-link:hover{background:#00cc66;color:#fff;box-shadow:0 0 12px rgba(0,255,120,0.6);}
-footer{text-align:center;font-size:0.85rem;color:rgba(255,255,255,0.45);padding:10px 0 14px;letter-spacing:0.3px;user-select:none;opacity:0;animation:fadeIn 0.8s ease forwards;animation-delay:0.15s;}
-footer a{color:#ffda00;font-weight:600;text-decoration:none;transition:color 0.3s ease;}
-footer a:hover{color:#00ff99;}
+/* Banner + Footer */
+#completion-banner {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,75,43,0.95);
+  color: #ffda00;
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+  font-weight: 700;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(255,218,0,0.6);
+  opacity: 0;
+  z-index: 9999;
+  pointer-events: none;
+  transition: opacity .4s ease, transform .4s ease;
+}
+#completion-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.05);
+}
+#docs-link {
+  position: fixed;
+  bottom: 14px;
+  right: 18px;
+  background: rgba(0,122,69,0.9);
+  color: #ffda00;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 7px 12px;
+  border-radius: 7px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+  z-index: 50;
+}
+#docs-link:hover {background:#00cc66;color:#fff;box-shadow:0 0 12px rgba(0,255,120,0.6);}
+footer {
+  text-align:center;
+  font-size:0.85rem;
+  color:rgba(255,255,255,0.45);
+  padding:10px 0 14px;
+  opacity:0;
+  animation:fadeIn 0.8s ease forwards;
+  animation-delay:0.15s;
+}
+footer a {
+  color:#ffda00;
+  font-weight:600;
+  text-decoration:none;
+}
+footer a:hover {color:#00ff99;}
 @keyframes fadeIn{to{opacity:1;}}
 </style>
 </head>
@@ -147,7 +272,7 @@ footer a:hover{color:#00ff99;}
         </stop>
       </linearGradient>
     </defs>
-    <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle" font-size="38">Decrypt the Narrative</text>
+    <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle">Decrypt the Narrative</text>
     <g class="lines">
       <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
       <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
@@ -215,16 +340,18 @@ async function fetchStatus(){
       const remaining=t.remaining??maxTokens;
       const remainingPercent=Math.max((remaining/maxTokens)*100,0);
       const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
-      const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready to Submit":"Active");
+      const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready":"Active");
       const card=document.createElement("div");
       card.className="team"+(t.completed?" complete":"");
       card.innerHTML=`
         <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${chipClass}">${chipLabel}</div></div>
         <div class="metric-group">
-          <div class="metric-row"><span class="metric-label">Seen</span><div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div><span class="metric-value">${seenPercent.toFixed(0)}%</span></div>
-          <div class="metric-row"><span class="metric-label">Requests</span><div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div><span class="metric-value">${remaining}</span></div>
-          <div class="metric-row"><span class="metric-label">Chaos</span><span class="metric-value">${t.chaos||0}</span></div>
-          <div class="metric-row"><span class="metric-label">Duration</span><span class="metric-value">${formatDuration(t.duration)}</span></div>
+          <div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div>
+          <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
+          <div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div>
+          <div class="metric-label">Requests</div><div class="metric-value">${remaining}</div>
+          <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
+          <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
         </div>`;
       container.appendChild(card);
       if(t.completed)queueBanner(t.team);
