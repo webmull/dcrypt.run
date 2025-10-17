@@ -84,31 +84,21 @@ header text {
 /* TEAMS GRID */
 #teams {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: 0.6rem;
-  padding: 0 2rem 2rem;      /* equal left/right padding */
-  width: 100%;
-  max-width: 1600px;         /* stops overexpansion */
-  margin: 0 auto;            /* centers container */
-  justify-content: center;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 460px));
+  gap: 0.8rem;
+  padding: 0 1.5rem 2rem;
+  justify-content: center;   /* center the tiles cleanly */
   align-content: start;
-  box-sizing: border-box;    /* ensures padding counts in width */
+  width: 100%;
+  margin: 0 auto;
+  max-width: 1500px;
+  box-sizing: border-box;
 }
 .team {
-  position: relative;
-  background: rgba(0,104,55,0.9);
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  transition: transform .2s ease;
-  min-width: 450px;
-  max-width: 500px;
-  height: auto;
-  overflow: hidden;
-  justify-self: center; /* centers single-tile rows */
+  justify-self: center;
+  width: 100%;
+  max-width: 460px;
+  min-width: 420px;
 }
 .team:hover { transform: translateY(-2px); }
 .team::after {
