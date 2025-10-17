@@ -76,10 +76,10 @@ header text {
 #teams {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: 1rem;
-  padding: 0.8rem;
+  gap: 1.2rem;
+  padding: 1rem;
   width: 100%;
-  max-width: 1300px;
+  max-width: 1500px;
   margin: 0 auto 3rem;
   justify-content: center;
 }
@@ -93,6 +93,7 @@ header text {
   flex-direction: column;
   gap: 0.5rem;
   transition: transform .2s ease;
+  min-width: 450px;
   max-width: 500px;
   margin: 0 auto;
   overflow: hidden;
@@ -112,7 +113,6 @@ header text {
   background: rgba(0,122,69,0.95);
   border: 1px solid rgba(0,204,102,0.4);
 }
-
 .team-header {
   display: flex;
   justify-content: space-between;
@@ -203,6 +203,28 @@ footer a {
   text-decoration: none;
 }
 footer a:hover {color: #00ff99;}
+
+/* API Docs Link */
+#docs-link {
+  position: fixed;
+  bottom: 14px;
+  right: 18px;
+  background: rgba(0,122,69,0.9);
+  color: #ffda00;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 8px 14px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+  z-index: 150;
+}
+#docs-link:hover {
+  background: #00cc66;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0,255,120,0.6);
+}
 </style>
 </head>
 <body>
@@ -246,6 +268,7 @@ footer a:hover {color: #00ff99;}
 <div id="teams"></div>
 <div id="completion-banner"></div>
 <footer>Designed by <a href="https://adamdavis.co.uk" target="_blank" rel="noopener noreferrer">Adam Davis</a></footer>
+<a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
 
 <script>
 /* Floating header particles */
