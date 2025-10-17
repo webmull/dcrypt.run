@@ -6,246 +6,147 @@
 <title>Decrypt the Narrative – Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-body {
-  margin: 0;
-  background: #004b2b;
-  color: #f7f7f7;
-  font-family: 'Inter', sans-serif;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  overflow-x: hidden;
+body{
+  margin:0;background:#004b2b;color:#f7f7f7;
+  font-family:'Inter',sans-serif;
+  display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;
 }
 
 /* Header */
-header {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  margin-top: .8rem;
-  margin-bottom: .5rem;
-}
-header svg.title { width: 760px; max-width: 95%; height: 150px; }
-header text {
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  fill: #ffda00;
-  filter: drop-shadow(0 0 8px rgba(255,218,0,0.6));
-  animation: textGlow 5s ease-in-out infinite;
-  font-size: 40px;
-}
-@keyframes textGlow {
-  0%,100% {filter: drop-shadow(0 0 8px rgba(255,218,0,0.5));}
-  50% {filter: drop-shadow(0 0 24px rgba(255,218,0,0.9));}
-}
-.lines line { stroke-width: 2.5; opacity: .95; stroke-linecap: round; }
-.nodes circle { fill: #00ff99; opacity: .9; filter: drop-shadow(0 0 4px #00ff99); }
-#header-particles {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  overflow: hidden; z-index: 0; pointer-events: none;
-}
-.particle {
-  position: absolute; width: 5px; height: 5px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #ffda00 0%, #00ff99 100%);
-  opacity: .5; animation: float 14s linear infinite;
-}
-@keyframes float {
-  0% {transform: translateY(0) translateX(0) scale(1);}
-  50% {transform: translateY(-120px) translateX(40px) scale(1.2);}
-  100% {transform: translateY(-240px) translateX(0) scale(1);}
-}
+header{position:relative;display:flex;justify-content:center;align-items:center;flex-direction:column;margin-top:.8rem;margin-bottom:.5rem;}
+header svg.title{width:760px;max-width:95%;height:150px;}
+header text{font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:3px;fill:#ffda00;
+  filter:drop-shadow(0 0 8px rgba(255,218,0,0.6));animation:textGlow 5s ease-in-out infinite;font-size:40px;}
+@keyframes textGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(255,218,0,0.5));}50%{filter:drop-shadow(0 0 24px rgba(255,218,0,0.9));}}
+.lines line{stroke-width:2.5;opacity:.95;stroke-linecap:round;}
+.nodes circle{fill:#00ff99;opacity:.9;filter:drop-shadow(0 0 4px #00ff99);}
+#header-particles{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0;pointer-events:none;}
+.particle{position:absolute;width:5px;height:5px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffda00 0%,#00ff99 100%);
+opacity:.5;animation:float 14s linear infinite;}
+@keyframes float{0%{transform:translateY(0)translateX(0)scale(1);}50%{transform:translateY(-120px)translateX(40px)scale(1.2);}100%{transform:translateY(-240px)translateX(0)scale(1);}}
 
 /* Summary */
-#summary {
-  display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem;
-  color: #cdeac0; margin: .6rem auto 1rem; text-align: center;
-}
-.summary-item {
-  display: flex; align-items: center; gap: 6px;
-  font-size: clamp(1rem,1.7vw,1.3rem); font-weight: 600;
-}
-.summary-icon {
-  width: 24px; height: 24px; stroke: #ffda00; stroke-width: 2; fill: none;
-}
+#summary{display:flex;justify-content:center;flex-wrap:wrap;gap:1rem;color:#cdeac0;margin:.6rem auto 1rem;text-align:center;}
+.summary-item{display:flex;align-items:center;gap:6px;font-size:clamp(1rem,1.7vw,1.3rem);font-weight:600;}
+.summary-icon{width:24px;height:24px;stroke:#ffda00;stroke-width:2;fill:none;}
 
 /* Grid + Tiles */
-#teams {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: 0.6rem; /* reduced tile gap */
-  padding: 1rem;
-  width: 100%;
-  max-width: 1500px;
-  margin: 0 auto 3rem;
-  justify-content: center;
+#teams{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(450px,1fr));
+  gap:0.6rem;
+  padding:1rem;
+  width:100%;
+  max-width:1500px;
+  margin:0 auto 3rem;
 }
-.team {
-  position: relative;
-  background: rgba(0,104,55,0.9);
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  transition: transform .2s ease;
-  min-width: 450px;
-  max-width: 500px;
-  margin: 0 auto;
-  overflow: hidden;
+.team{
+  position:relative;
+  background:rgba(0,104,55,0.9);
+  border-radius:12px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.25);
+  padding:1rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+  transition:transform .2s ease;
+  min-width:450px;
+  max-width:500px;
+  margin:0 auto;
+  overflow:hidden;
 }
-.team:hover {transform: translateY(-2px);}
-.team::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 5px;
-  background: linear-gradient(90deg, #00ff99, #ffda00, #00cc66);
-  opacity: .95;
-  border-radius: 12px 12px 0 0;
-  z-index: 1;
+.team:hover{transform:translateY(-2px);}
+.team::before{
+  content:"";
+  position:absolute;top:0;left:0;width:100%;height:5px;
+  background:linear-gradient(90deg,#00ff99,#ffda00,#00cc66);
+  opacity:.95;border-radius:12px 12px 0 0;z-index:1;
 }
-.team.complete {
-  background: rgba(0,122,69,0.95);
-  border: 1px solid rgba(0,204,102,0.4);
-}
-.team-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 6px;
-}
-.team h2 { font-size: 1.15rem; color: #ffda00; margin: 0; }
-.status-chip {
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: .8rem;
-  text-transform: uppercase;
-  background: rgba(255,255,255,0.08);
-}
-.status-chip.completed { color: #fff; background: rgba(0,204,102,0.25); }
-.status-chip.ready { color: #ffda00; background: rgba(255,218,0,0.15); }
+.team.complete{background:rgba(0,122,69,0.95);border:1px solid rgba(0,204,102,0.4);}
+.team-header{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.team h2{font-size:1.15rem;color:#ffda00;margin:0;}
+.status-chip{padding:3px 8px;border-radius:6px;font-size:.8rem;text-transform:uppercase;background:rgba(255,255,255,0.08);}
+.status-chip.completed{color:#fff;background:rgba(0,204,102,0.25);}
+.status-chip.ready{color:#ffda00;background:rgba(255,218,0,0.15);}
 
 /* Metrics */
-.metric-group {
-  display: grid;
-  grid-template-columns: auto auto;
-  row-gap: 2px; column-gap: 8px;
-  align-items: center;
-  font-size: .9rem;
-  background: rgba(255,255,255,0.04);
-  border-radius: 6px;
-  padding: 0.5rem;
+.metric-group{
+  display:grid;
+  grid-template-columns:auto auto;
+  row-gap:2px;column-gap:8px;
+  align-items:center;
+  font-size:.9rem;
+  background:rgba(255,255,255,0.04);
+  border-radius:6px;
+  padding:0.5rem;
 }
-.metric-label { font-weight: 700; color: #fff; }
-.metric-value { text-align: right; font-weight: 600; color: #cdeac0; }
-.bar {
-  grid-column: span 2;
-  height: 12px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 0.4rem;
-  margin-bottom: 0.4rem;
+.metric-label{font-weight:700;color:#fff;}
+.metric-value{text-align:right;font-weight:600;color:#cdeac0;}
+.bar{
+  grid-column:span 2;
+  height:12px;
+  background:rgba(255,255,255,0.15);
+  border:1px solid rgba(255,255,255,0.25);
+  border-radius:8px;
+  overflow:hidden;
+  margin-top:0.4rem;margin-bottom:0.4rem;
 }
-.bar-fill {
-  height: 100%;
-  width: 0;
-  transition: width 0.4s ease;
-}
-.bar-fill.seen {background: #00cc66;}
-.bar-fill.requests {background: #ffda00;}
+.bar-fill{height:100%;width:0;transition:width 0.4s ease;}
+.bar-fill.seen{background:#00cc66;}
+.bar-fill.requests{background:#ffda00;}
 
 /* Banner */
-#completion-banner {
-  position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0,75,43,0.95);
-  color: #ffda00;
-  font-size: clamp(1.5rem, 3vw, 2.4rem);
-  font-weight: 700;
-  padding: 1rem 2rem;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(255,218,0,0.6);
-  opacity: 0;
-  z-index: 9999;
-  pointer-events: none;
-  transition: opacity .4s ease, transform .4s ease;
-}
-#completion-banner.show {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.05);
-}
+#completion-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+background:rgba(0,75,43,0.95);color:#ffda00;font-size:clamp(1.5rem,3vw,2.4rem);font-weight:700;
+padding:1rem 2rem;border-radius:12px;box-shadow:0 0 20px rgba(255,218,0,0.6);
+opacity:0;z-index:9999;pointer-events:none;transition:opacity .4s ease,transform .4s ease;}
+#completion-banner.show{opacity:1;transform:translate(-50%,-50%) scale(1.05);}
 
 /* Footer */
-footer {
-  position: fixed;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.85rem;
-  color: rgba(255,255,255,0.5);
-  z-index: 100;
-}
+footer{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);
+font-size:0.85rem;color:rgba(255,255,255,0.5);z-index:100;}
 
-/* API Docs Link */
-#docs-link {
-  position: fixed;
-  bottom: 14px;
-  right: 18px;
-  background: rgba(0,122,69,0.9);
-  color: #ffda00;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 8px 14px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  transition: all 0.3s ease;
-  z-index: 150;
+/* Docs Link */
+#docs-link{
+  position:fixed;bottom:14px;right:18px;
+  background:rgba(0,122,69,0.9);
+  color:#ffda00;text-decoration:none;font-weight:600;font-size:0.95rem;
+  padding:8px 14px;border-radius:8px;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+  transition:all 0.3s ease;z-index:150;
 }
-#docs-link:hover {
-  background: #00cc66;
-  color: #fff;
-  box-shadow: 0 0 12px rgba(0,255,120,0.6);
-}
+#docs-link:hover{background:#00cc66;color:#fff;box-shadow:0 0 12px rgba(0,255,120,0.6);}
 </style>
 </head>
 <body>
 
 <header>
-  <div id="header-particles"></div>
-  <svg class="title" viewBox="0 0 700 160">
-    <defs>
-      <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="#00ff99">
-          <animate attributeName="stop-color" values="#00ff99;#ffda00;#00cc66;#00ff99" dur="8s" repeatCount="indefinite"/>
-        </stop>
-        <stop offset="100%" stop-color="#ffda00">
-          <animate attributeName="stop-color" values="#ffda00;#00cc66;#00ff99;#ffda00" dur="8s" repeatCount="indefinite"/>
-        </stop>
-      </linearGradient>
-    </defs>
-    <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle">Decrypt the Narrative</text>
-    <g class="lines">
-      <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
-      <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
-      <line x1="260" y1="110" x2="340" y2="80" stroke="url(#flowGradient)" />
-      <line x1="340" y1="80" x2="420" y2="110" stroke="url(#flowGradient)" />
-      <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
-      <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
-    </g>
-    <g class="nodes">
-      <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
-      <circle cx="340" cy="80" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
-    </g>
-  </svg>
+<div id="header-particles"></div>
+<svg class="title" viewBox="0 0 700 160">
+  <defs>
+    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00ff99">
+        <animate attributeName="stop-color" values="#00ff99;#ffda00;#00cc66;#00ff99" dur="8s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#ffda00">
+        <animate attributeName="stop-color" values="#ffda00;#00cc66;#00ff99;#ffda00" dur="8s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+  </defs>
+  <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle">Decrypt the Narrative</text>
+  <g class="lines">
+    <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
+    <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
+    <line x1="260" y1="110" x2="340" y2="80" stroke="url(#flowGradient)" />
+    <line x1="340" y1="80" x2="420" y2="110" stroke="url(#flowGradient)" />
+    <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
+    <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
+  </g>
+  <g class="nodes">
+    <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
+    <circle cx="340" cy="80" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
+  </g>
+</svg>
 </header>
 
 <div id="summary">
@@ -264,4 +165,59 @@ footer {
 /* Floating header particles */
 const field=document.getElementById("header-particles");
 const particles=[];
-f
+for(let i=0;i<25;i++){const p=document.createElement("div");p.className="particle";resetParticle(p,true);field.appendChild(p);particles.push(p);}
+function resetParticle(p,init=false){p.style.left=Math.random()*100+"%";p.style.top=init?(Math.random()*100)+"%":"100%";p.style.animationDuration=10+Math.random()*6+"s";}
+function recycle(){for(const p of particles){const top=parseFloat(p.style.top);if(top<-5){resetParticle(p);}else{p.style.top=(top-0.2)+"%";}}requestAnimationFrame(recycle);}recycle();
+
+/* Banner queue */
+const banner=document.getElementById("completion-banner");
+let bannerQueue=[];let bannerActive=false;let shownTeams=new Set();
+function queueBanner(team){if(shownTeams.has(team))return;shownTeams.add(team);bannerQueue.push(team);processBannerQueue();}
+function processBannerQueue(){if(bannerActive||bannerQueue.length===0)return;bannerActive=true;const team=bannerQueue.shift();banner.innerText=`🎉 ${team} has completed the challenge! 🎉`;banner.classList.add("show");setTimeout(()=>{banner.classList.remove("show");bannerActive=false;setTimeout(processBannerQueue,600);},4000);}
+
+/* Status fetch */
+function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
+let statusBusy=false;
+async function fetchStatus(){
+  if(statusBusy)return;statusBusy=true;
+  try{
+    const res=await fetch("/status",{cache:"no-store"});
+    const data=await res.json();
+    const teams=data.teams||[];
+    document.getElementById("count-teams").innerHTML=`<b>${teams.length}</b>`;
+    document.getElementById("count-tokens").innerHTML=`<b>${teams.reduce((s,t)=>s+(t.tokens_issued||0),0)}</b>`;
+    document.getElementById("count-chaos").innerHTML=`<b>${data.total_chaos||0}</b>`;
+    document.getElementById("count-completed").innerHTML=`<b>${teams.filter(t=>t.completed).length}</b>`;
+    const container=document.getElementById("teams");container.innerHTML="";
+    const totalWords=data.total_words||50;const defaultLimit=20;
+
+    teams.sort((a,b)=>b.seen_count-a.seen_count);
+    for(const t of teams){
+      const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
+      const maxTokens=t.max||t.max_tokens||defaultLimit;
+      const remaining=t.remaining??maxTokens;
+      const remainingPercent=Math.max((remaining/maxTokens)*100,0);
+      const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
+      const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready":"Active");
+      const card=document.createElement("div");
+      card.className="team"+(t.completed?" complete":"");
+      card.innerHTML=`
+        <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${chipClass}">${chipLabel}</div></div>
+        <div class="metric-group">
+          <div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div>
+          <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
+          <div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div>
+          <div class="metric-label">Requests</div><div class="metric-value">${remaining}</div>
+          <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
+          <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
+        </div>`;
+      container.appendChild(card);
+      if(t.completed)queueBanner(t.team);
+    }
+  }catch(e){console.error(e);}
+  finally{statusBusy=false;setTimeout(fetchStatus,1500);}
+}
+fetchStatus();
+</script>
+</body>
+</html>
