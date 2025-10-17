@@ -83,19 +83,20 @@ header text {
 
 /* TEAMS GRID */
 #teams {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
-  gap: 0.8rem;
-  padding: 0 2rem 2rem;
-  width: 100%;
-  max-width: 1600px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;      /* always start centered */
+  gap: 1rem;                    /* consistent spacing */
+  padding: 0 1.5rem 2rem;
   margin: 0 auto;
-  justify-content: start;
-  align-content: start;
+  max-width: 1600px;
   box-sizing: border-box;
 }
+
 .team {
-  position: relative;
+  flex: 1 1 440px;              /* flexible base width */
+  max-width: 480px;             /* prevents stretching */
+  min-width: 420px;             /* prevents overlap */
   background: rgba(0,104,55,0.9);
   border-radius: 12px;
   box-shadow: 0 3px 8px rgba(0,0,0,0.25);
@@ -104,12 +105,9 @@ header text {
   flex-direction: column;
   gap: 0.5rem;
   transition: transform .2s ease;
-  width: 100%;
-  min-width: 440px;
-  max-width: 480px;
-  height: auto;
   overflow: hidden;
 }
+
 .team:hover { transform: translateY(-2px); }
 .team::after {
   content: "";
