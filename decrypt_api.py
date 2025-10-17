@@ -14,6 +14,9 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
+# Mount the "static" directory to serve static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # --- CORS ---
 app.add_middleware(
     CORSMiddleware,
