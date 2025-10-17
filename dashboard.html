@@ -89,24 +89,24 @@ header text {
 /* TEAMS GRID */
 #teams {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 1rem;
   padding: 1rem;
-  max-width: 1400px;
   margin: 0 auto;
+  max-width: 1600px;
   box-sizing: border-box;
 }
-@media (max-width: 600px) {
+@media (max-width: 480px) {
   #teams {
     grid-template-columns: 1fr;
-    padding: 0.5rem;
+    gap: 0.7rem;
+    padding: 0.6rem;
   }
   .team {
-    min-height: 160px;
     padding: 0.8rem;
+    min-height: 150px;
   }
 }
-
 .team {
   position: relative;
   background: rgba(0,104,55,0.9);
