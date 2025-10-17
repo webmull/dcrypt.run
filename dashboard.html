@@ -75,12 +75,12 @@ header text {
 /* Grid + Tiles */
 #teams {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
   gap: 1rem;
   padding: 0.8rem;
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto 1rem;
+  max-width: 1300px;
+  margin: 0 auto 3rem;
   justify-content: center;
 }
 .team {
@@ -93,7 +93,7 @@ header text {
   flex-direction: column;
   gap: 0.5rem;
   transition: transform .2s ease;
-  max-width: 380px;
+  max-width: 500px;
   margin: 0 auto;
   overflow: hidden;
 }
@@ -119,7 +119,7 @@ header text {
   align-items: center;
   margin-top: 8px;
 }
-.team h2 { font-size: 1.1rem; color: #ffda00; margin: 0; }
+.team h2 { font-size: 1.15rem; color: #ffda00; margin: 0; }
 .status-chip {
   padding: 3px 8px;
   border-radius: 6px;
@@ -160,7 +160,7 @@ header text {
 .bar-fill.seen {background: #00cc66;}
 .bar-fill.requests {background: #ffda00;}
 
-/* Banner + Footer */
+/* Banner */
 #completion-banner {
   position: fixed;
   top: 50%; left: 50%;
@@ -181,38 +181,28 @@ header text {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1.05);
 }
-#docs-link {
-  position: fixed;
-  bottom: 14px;
-  right: 18px;
-  background: rgba(0,122,69,0.9);
-  color: #ffda00;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 7px 12px;
-  border-radius: 7px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  transition: all 0.3s ease;
-  z-index: 50;
-}
-#docs-link:hover {background:#00cc66;color:#fff;box-shadow:0 0 12px rgba(0,255,120,0.6);}
+
+/* Footer */
 footer {
-  text-align:center;
-  font-size:0.85rem;
-  color:rgba(255,255,255,0.45);
-  padding:10px 0 14px;
-  opacity:0;
-  animation:fadeIn 0.8s ease forwards;
-  animation-delay:0.15s;
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.45);
+  padding: 8px 16px;
+  background: rgba(0,75,43,0.6);
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  z-index: 100;
 }
 footer a {
-  color:#ffda00;
-  font-weight:600;
-  text-decoration:none;
+  color: #ffda00;
+  font-weight: 600;
+  text-decoration: none;
 }
-footer a:hover {color:#00ff99;}
-@keyframes fadeIn{to{opacity:1;}}
+footer a:hover {color: #00ff99;}
 </style>
 </head>
 <body>
@@ -232,16 +222,16 @@ footer a:hover {color:#00ff99;}
     </defs>
     <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle">Decrypt the Narrative</text>
     <g class="lines">
-      <line x1="100" y1="110" x2="180" y1="80" stroke="url(#flowGradient)" />
-      <line x1="180" y1="80" x2="260" y1="110" stroke="url(#flowGradient)" />
-      <line x1="260" y1="110" x2="340" y1="70" stroke="url(#flowGradient)" />
-      <line x1="340" y1="70" x2="420" y1="110" stroke="url(#flowGradient)" />
-      <line x1="420" y1="110" x2="500" y1="80" stroke="url(#flowGradient)" />
-      <line x1="500" y1="80" x2="580" y1="110" stroke="url(#flowGradient)" />
+      <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
+      <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
+      <line x1="260" y1="110" x2="340" y2="80" stroke="url(#flowGradient)" />
+      <line x1="340" y1="80" x2="420" y2="110" stroke="url(#flowGradient)" />
+      <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
+      <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
     </g>
     <g class="nodes">
       <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
-      <circle cx="340" cy="70" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
+      <circle cx="340" cy="80" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
     </g>
   </svg>
 </header>
@@ -255,7 +245,6 @@ footer a:hover {color:#00ff99;}
 
 <div id="teams"></div>
 <div id="completion-banner"></div>
-<a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
 <footer>Designed by <a href="https://adamdavis.co.uk" target="_blank" rel="noopener noreferrer">Adam Davis</a></footer>
 
 <script>
