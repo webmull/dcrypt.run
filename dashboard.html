@@ -76,7 +76,7 @@ header text {
 #teams {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: 1.2rem;
+  gap: 0.6rem; /* reduced tile gap */
   padding: 1rem;
   width: 100%;
   max-width: 1500px;
@@ -91,7 +91,7 @@ header text {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   transition: transform .2s ease;
   min-width: 450px;
   max-width: 500px;
@@ -117,7 +117,7 @@ header text {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 .team h2 { font-size: 1.15rem; color: #ffda00; margin: 0; }
 .status-chip {
@@ -134,7 +134,7 @@ header text {
 .metric-group {
   display: grid;
   grid-template-columns: auto auto;
-  row-gap: 4px; column-gap: 8px;
+  row-gap: 2px; column-gap: 8px;
   align-items: center;
   font-size: .9rem;
   background: rgba(255,255,255,0.04);
@@ -150,7 +150,8 @@ header text {
   border: 1px solid rgba(255,255,255,0.25);
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 4px;
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
 }
 .bar-fill {
   height: 100%;
@@ -263,62 +264,4 @@ footer {
 /* Floating header particles */
 const field=document.getElementById("header-particles");
 const particles=[];
-for(let i=0;i<25;i++){const p=document.createElement("div");p.className="particle";resetParticle(p,true);field.appendChild(p);particles.push(p);}
-function resetParticle(p,init=false){p.style.left=Math.random()*100+"%";p.style.top=init?(Math.random()*100)+"%":"100%";p.style.animationDuration=10+Math.random()*6+"s";}
-function recycle(){for(const p of particles){const top=parseFloat(p.style.top);if(top<-5){resetParticle(p);}else{p.style.top=(top-0.2)+"%";}}requestAnimationFrame(recycle);}recycle();
-
-/* Banner queue */
-const banner=document.getElementById("completion-banner");
-let bannerQueue=[];let bannerActive=false;let shownTeams=new Set();
-function queueBanner(team){if(shownTeams.has(team))return;shownTeams.add(team);bannerQueue.push(team);processBannerQueue();}
-function processBannerQueue(){if(bannerActive||bannerQueue.length===0)return;bannerActive=true;const team=bannerQueue.shift();banner.innerText=`🎉 ${team} has completed the challenge! 🎉`;banner.classList.add("show");setTimeout(()=>{banner.classList.remove("show");bannerActive=false;setTimeout(processBannerQueue,600);},4000);}
-
-/* Data */
-function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
-let statusBusy=false;
-async function fetchStatus(){
-  if(statusBusy)return;
-  statusBusy=true;
-  try{
-    const res=await fetch("/status",{cache:"no-store"});
-    const data=await res.json();
-    const teams=data.teams||[];
-    document.getElementById("count-teams").innerHTML=`<b>${teams.length}</b>`;
-    document.getElementById("count-tokens").innerHTML=`<b>${teams.reduce((s,t)=>s+(t.tokens_issued||0),0)}</b>`;
-    document.getElementById("count-chaos").innerHTML=`<b>${data.total_chaos||0}</b>`;
-    document.getElementById("count-completed").innerHTML=`<b>${teams.filter(t=>t.completed).length}</b>`;
-    const container=document.getElementById("teams");
-    container.innerHTML="";
-    const totalWords=data.total_words||50;
-    const defaultLimit=20;
-
-    teams.sort((a,b)=>b.seen_count-a.seen_count);
-    for(const t of teams){
-      const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
-      const maxTokens=t.max||t.max_tokens||defaultLimit;
-      const remaining=t.remaining??maxTokens;
-      const remainingPercent=Math.max((remaining/maxTokens)*100,0);
-      const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
-      const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready":"Active");
-      const card=document.createElement("div");
-      card.className="team"+(t.completed?" complete":"");
-      card.innerHTML=`
-        <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${chipClass}">${chipLabel}</div></div>
-        <div class="metric-group">
-          <div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div>
-          <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
-          <div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div>
-          <div class="metric-label">Requests</div><div class="metric-value">${remaining}</div>
-          <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
-          <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
-        </div>`;
-      container.appendChild(card);
-      if(t.completed)queueBanner(t.team);
-    }
-  }catch(e){console.error(e);}
-  finally{statusBusy=false;setTimeout(fetchStatus,1500);}
-}
-fetchStatus();
-</script>
-</body>
-</html>
+f
