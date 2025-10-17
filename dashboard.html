@@ -84,21 +84,31 @@ header text {
 /* TEAMS GRID */
 #teams {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(420px, 460px));
+  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
   gap: 0.8rem;
-  padding: 0 1.5rem 2rem;
-  justify-content: center;   /* center the tiles cleanly */
-  align-content: start;
+  padding: 0 2rem 2rem;
   width: 100%;
+  max-width: 1600px;
   margin: 0 auto;
-  max-width: 1500px;
+  justify-content: start;
+  align-content: start;
   box-sizing: border-box;
 }
 .team {
-  justify-self: center;
+  position: relative;
+  background: rgba(0,104,55,0.9);
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform .2s ease;
   width: 100%;
-  max-width: 460px;
-  min-width: 420px;
+  min-width: 440px;
+  max-width: 480px;
+  height: auto;
+  overflow: hidden;
 }
 .team:hover { transform: translateY(-2px); }
 .team::after {
@@ -243,7 +253,6 @@ recycle();
 
 /* Update Dashboard */
 function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
-function updateBar(bar,value){bar.style.width=value+"%";}
 async function fetchStatus(){
   try{
     const res=await fetch("/status",{cache:"no-store"});
