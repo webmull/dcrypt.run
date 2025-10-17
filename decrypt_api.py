@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 import random, time, uuid, os, re, yaml
 
 app = FastAPI(title="Decrypt the Narrative API")
@@ -13,6 +14,8 @@ def custom_openapi():
     return custom_spec
 
 app.openapi = custom_openapi
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # --- CORS ---
 app.add_middleware(
