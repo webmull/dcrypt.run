@@ -27,11 +27,7 @@ header {
   margin-top: .8rem;
   margin-bottom: .5rem;
 }
-header svg.title {
-  width: 760px;
-  max-width: 95%;
-  height: 150px;
-}
+header svg.title { width: 760px; max-width: 95%; height: 150px; }
 header text {
   font-family: 'Inter', sans-serif;
   font-weight: 700;
@@ -46,34 +42,16 @@ header text {
   0%,100% {filter: drop-shadow(0 0 8px rgba(255,218,0,0.5));}
   50% {filter: drop-shadow(0 0 24px rgba(255,218,0,0.9));}
 }
-.lines line {
-  stroke-width: 2.5;
-  opacity: .95;
-  stroke-linecap: round;
-}
-.nodes circle {
-  fill: #00ff99;
-  opacity: .9;
-  filter: drop-shadow(0 0 4px #00ff99);
-}
+.lines line { stroke-width: 2.5; opacity: .95; stroke-linecap: round; }
+.nodes circle { fill: #00ff99; opacity: .9; filter: drop-shadow(0 0 4px #00ff99); }
 #header-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 0;
-  pointer-events: none;
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  overflow: hidden; z-index: 0; pointer-events: none;
 }
 .particle {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
+  position: absolute; width: 5px; height: 5px; border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #ffda00 0%, #00ff99 100%);
-  opacity: .5;
-  animation: float 14s linear infinite;
+  opacity: .5; animation: float 14s linear infinite;
 }
 @keyframes float {
   0% {transform: translateY(0) translateX(0) scale(1);}
@@ -83,56 +61,48 @@ header text {
 
 /* Summary */
 #summary {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  color: #cdeac0;
-  margin: .6rem auto 1rem;
-  text-align: center;
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem;
+  color: #cdeac0; margin: .6rem auto 1rem; text-align: center;
 }
 .summary-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: clamp(1rem,1.7vw,1.3rem);
-  font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+  font-size: clamp(1rem,1.7vw,1.3rem); font-weight: 600;
 }
 .summary-icon {
-  width: 24px;
-  height: 24px;
-  stroke: #ffda00;
-  stroke-width: 2;
-  fill: none;
+  width: 24px; height: 24px; stroke: #ffda00; stroke-width: 2; fill: none;
 }
 
 /* Grid + Tiles */
 #teams {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1rem;
   padding: 0.8rem;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto 1rem;
 }
 .team {
+  position: relative;
   background: rgba(0,104,55,0.9);
   border-radius: 12px;
   box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-  padding: 0.8rem 1rem;
+  padding: 0.9rem 1rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
   transition: transform .2s ease;
+  min-width: 340px;
 }
 .team:hover {transform: translateY(-2px);}
-.team::after {
+.team::before {
   content: "";
-  height: 4px;
-  border-radius: 4px 4px 0 0;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 5px;
+  border-radius: 12px 12px 0 0;
   background: linear-gradient(90deg, #00ff99, #ffda00, #00cc66);
-  margin-bottom: 0.5rem;
+  opacity: .95;
 }
 .team.complete {
   background: rgba(0,122,69,0.95);
@@ -143,12 +113,9 @@ header text {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 6px;
 }
-.team h2 {
-  font-size: 1.1rem;
-  color: #ffda00;
-  margin: 0;
-}
+.team h2 { font-size: 1.1rem; color: #ffda00; margin: 0; }
 .status-chip {
   padding: 3px 8px;
   border-radius: 6px;
@@ -156,41 +123,28 @@ header text {
   text-transform: uppercase;
   background: rgba(255,255,255,0.08);
 }
-.status-chip.completed {
-  color: #fff;
-  background: rgba(0,204,102,0.25);
-}
-.status-chip.ready {
-  color: #ffda00;
-  background: rgba(255,218,0,0.15);
-}
+.status-chip.completed { color: #fff; background: rgba(0,204,102,0.25); }
+.status-chip.ready { color: #ffda00; background: rgba(255,218,0,0.15); }
 
 /* Metrics */
 .metric-group {
   display: grid;
   grid-template-columns: auto auto;
-  row-gap: 4px;
-  column-gap: 8px;
+  row-gap: 4px; column-gap: 8px;
   align-items: center;
   font-size: .9rem;
   background: rgba(255,255,255,0.04);
   border-radius: 6px;
   padding: 0.5rem;
 }
-.metric-label {
-  font-weight: 700;
-  color: #fff;
-}
-.metric-value {
-  text-align: right;
-  font-weight: 600;
-  color: #cdeac0;
-}
+.metric-label { font-weight: 700; color: #fff; }
+.metric-value { text-align: right; font-weight: 600; color: #cdeac0; }
 .bar {
   grid-column: span 2;
-  height: 10px;
+  height: 12px;
   background: rgba(255,255,255,0.15);
-  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
   overflow: hidden;
   margin-bottom: 4px;
 }
