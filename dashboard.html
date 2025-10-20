@@ -275,7 +275,15 @@ function recycle(){
 recycle();
 
 /* Update Dashboard */
-function formatDuration(sec){if(!sec)return"-";const m=Math.floor(sec/60);const s=Math.floor(sec%60);return`${m}m ${s}s`;}
+function formatDuration(sec){
+  if(!sec) return "-";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if(h > 0) return `${h}h ${m}m ${s}s`;
+  if(m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
 async function fetchStatus(){
   try{
     const res=await fetch("/status",{cache:"no-store"});
