@@ -238,7 +238,7 @@ async def validate_submission(request: Request, team: str = Header(None), token:
     if seen < len(WORDS):
         raise HTTPException(
             status_code=403,
-            detail=f"You've yet to see all the words. Fragments seen: {seen}/{len(WORDS)}."
+            detail="You've yet to see all the words. Keep exploring fragments before submitting."
         )
 
     normalize = lambda s: re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
@@ -258,6 +258,7 @@ async def validate_submission(request: Request, team: str = Header(None), token:
         "completed_at": team_info["completed_time"],
         "duration": team_info["completed_time"] - team_info["start_time"]
     }
+
 
 
 # -------------------------------------------------------------
