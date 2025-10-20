@@ -223,7 +223,8 @@ def get_fragment(request: Request, team: str = Header(None), token: str = Header
 # -------------------------------------------------------------
 @app.post("/validate")
 async def validate_submission(request: Request, team: str = Header(None), token: str = Header(None)):
-    """Validate a team's submitted sentence against the canonical full text."""
+    """Validate a team's submitted sentence against the canonical full text.
+    Submission only allowed once all fragments have been seen."""
     token_data = validate_token(team, token)
     token_data["remaining"] -= 1
 
@@ -232,6 +233,14 @@ async def validate_submission(request: Request, team: str = Header(None), token:
     if not submitted_text:
         raise HTTPException(status_code=400, detail="Missing submission")
 
+    team_info = TEAM_DATA.setdefault(team, {})
+    seen = team_info.get("seen_count", 0)
+    if seen < len(WORDS):
+        raise HTTPException(
+            status_code=403,
+            detail=f"You've yet to see all the words. Fragments seen: {seen}/{len(WORDS)}."
+        )
+
     normalize = lambda s: re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
     canonical = normalize(FULL_TEXT)
     submission_clean = normalize(submitted_text)
@@ -239,16 +248,17 @@ async def validate_submission(request: Request, team: str = Header(None), token:
     if submission_clean != canonical:
         raise HTTPException(status_code=400, detail="Incorrect submission")
 
-    TEAM_DATA.setdefault(team, {}).setdefault("completed_time", time.time())
+    team_info["completed_time"] = time.time()
     COMPLETED_TEAMS.add(team)
 
     return {
         "team": team,
         "status": "success",
         "message": "Correct submission! Challenge complete.",
-        "completed_at": TEAM_DATA[team]["completed_time"],
-        "duration": TEAM_DATA[team]["completed_time"] - TEAM_DATA[team]["start_time"]
+        "completed_at": team_info["completed_time"],
+        "duration": team_info["completed_time"] - team_info["start_time"]
     }
+
 
 # -------------------------------------------------------------
 # Status Endpoint with Cleanup
