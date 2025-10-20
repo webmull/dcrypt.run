@@ -179,6 +179,12 @@ def issue_token(request: Request, team: str = Header(None)):
     if len(team) > 20:
         raise HTTPException(status_code=400, detail="Team name too long (max 20 characters)")
 
+    # --- limit active teams ---
+    ACTIVE_LIMIT = 150
+    active_count = len(TEAM_TOKENS)
+    if team not in TEAM_TOKENS and active_count >= ACTIVE_LIMIT:
+        raise HTTPException(status_code=403, detail="Team limit reached. Please try again later.")
+
     now = current_time()
     existing = TEAM_TOKENS.get(team)
 
