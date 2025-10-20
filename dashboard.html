@@ -282,11 +282,11 @@ async function fetchStatus(){
     document.getElementById("count-completed").innerHTML=`<b>${teams.filter(t=>t.completed).length}</b>`;
     const container=document.getElementById("teams");container.innerHTML="";
     const totalWords=data.total_words||50;
+    const TOKEN_LIMIT=20; // match backend
     teams.sort((a,b)=>b.seen_count-a.seen_count);
     for(const t of teams){
       const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
-      const maxTokens=t.tokens_issued||1;
-      const remainingPercent=Math.max((t.remaining/maxTokens)*100,0);
+      const remainingPercent=Math.max((t.remaining/TOKEN_LIMIT)*100,0);
       const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
       const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready":"Active");
       const card=document.createElement("div");
