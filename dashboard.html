@@ -89,26 +89,6 @@ header text {
 /* TEAMS GRID */
 #teams {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 0.8rem;
-  padding: 1rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-@media (max-width: 600px) {
-  #teams {
-    grid-template-columns: 1fr;
-    padding: 0.5rem;
-  }
-  .team {
-    min-height: 160px;
-    padding: 0.8rem;
-  }
-}
-
-#teams {
-  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
   gap: 1rem;
   padding: 1rem;
@@ -127,7 +107,6 @@ header text {
     min-height: 150px;
   }
 }
-
 
 .team {
   position: relative;
@@ -306,7 +285,8 @@ async function fetchStatus(){
     teams.sort((a,b)=>b.seen_count-a.seen_count);
     for(const t of teams){
       const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
-      const remainingPercent=t.remaining&&t.max?Math.max((t.remaining/t.max)*100,0):100;
+      const maxTokens=t.tokens_issued||1;
+      const remainingPercent=Math.max((t.remaining/maxTokens)*100,0);
       const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
       const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready":"Active");
       const card=document.createElement("div");
