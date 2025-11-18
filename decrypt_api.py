@@ -36,6 +36,7 @@ FULL_TEXT = (
     "[narrative redacted from history]"
     "[narrative redacted from history]"
 )
+
 WORDS = FULL_TEXT.split()
 FRAGMENTS = [{"word": w, "position": i} for i, w in enumerate(WORDS)]
 
@@ -260,12 +261,8 @@ async def validate_submission(request: Request, team: str = Header(None), token:
     return {
         "team": team,
         "status": "success",
-        "message": "Correct submission! Challenge complete.",
-        "completed_at": team_info["completed_time"],
-        "duration": team_info["completed_time"] - team_info["start_time"]
+        "message": "Correct submission! Challenge complete."
     }
-
-
 
 # -------------------------------------------------------------
 # Status Endpoint with Cleanup
