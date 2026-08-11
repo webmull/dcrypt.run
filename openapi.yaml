@@ -424,7 +424,7 @@ components:
       type: object
       title: Team status
       required: [team, unique_seen, requests_ok, submissions, remaining, max,
-                 completed, chaos, tokens_issued, duration]
+                 completed, chaos, tokens_issued, duration, idle_seconds]
       properties:
         team: { type: string }
         unique_seen:
@@ -454,6 +454,11 @@ components:
           description: |
             Seconds since first `/auth`, frozen at completion time for teams
             that have finished.
+        idle_seconds:
+          type: number
+          description: |
+            Seconds since this team's last request. Reaching `IDLE_TIMEOUT`
+            means the team is evicted on the next sweep.
 
     Error:
       type: object

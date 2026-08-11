@@ -4,7 +4,7 @@ from conftest import force_chaos, no_chaos
 
 TEAM_KEYS = {
     "team", "unique_seen", "requests_ok", "submissions", "remaining", "max",
-    "completed", "chaos", "tokens_issued", "duration",
+    "completed", "chaos", "tokens_issued", "duration", "idle_seconds",
 }
 TOP_LEVEL_KEYS = {"teams", "total_chaos", "total_words", "recent_chaos", "uptime"}
 
@@ -51,6 +51,29 @@ def test_progress_is_reported(client, auth, api_mod, monkeypatch):
     assert team["unique_seen"] == 1      # same word twice
     assert team["requests_ok"] == 2
     assert team["remaining"] == api_mod.TOKEN_LIMIT - 2
+
+
+def test_idle_seconds_starts_near_zero(client, auth):
+    auth()
+    assert client.get("/status").json()["teams"][0]["idle_seconds"] < 5
+
+
+def test_idle_seconds_tracks_last_request(client, auth, api_mod):
+    """This drives the idle/decoding icon on the scoreboard."""
+    auth()
+    api_mod.TEAM_TOKENS["team-alpha"]["timestamp"] -= 300
+
+    assert client.get("/status").json()["teams"][0]["idle_seconds"] >= 300
+
+
+def test_a_request_resets_idle_seconds(client, auth, api_mod, monkeypatch):
+    no_chaos(monkeypatch)
+    headers, _ = auth()
+    api_mod.TEAM_TOKENS["team-alpha"]["timestamp"] -= 300
+
+    client.get("/fragment", headers=headers)
+
+    assert client.get("/status").json()["teams"][0]["idle_seconds"] < 5
 
 
 def test_chaos_totals_aggregate_across_teams(client, api_mod, monkeypatch):

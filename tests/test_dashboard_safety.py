@@ -75,6 +75,27 @@ def test_respects_reduced_motion(source):
     assert "prefers-reduced-motion" in source
 
 
+def test_reduced_motion_does_not_blanket_disable_animation(source):
+    """A blanket `*` override flattened the header to a static logo, including
+    the colour glow, which is not movement and not what the setting asks for."""
+    block = source.split("prefers-reduced-motion: reduce)")[1].split("}\n}")[0]
+    assert "*, *::before" not in block
+    assert "animation-duration: 0.001s" not in source
+
+
+def test_all_three_team_states_are_represented(source):
+    """Completed, decoding and idle each need their own icon."""
+    for cls in ("i-done", "i-decoding", "i-idle"):
+        assert cls in source, cls
+    assert "idle_seconds" in source
+    assert "IDLE_AFTER" in source
+
+
+def test_state_labels_are_exposed_to_screen_readers(source):
+    assert "sr-only" in source
+    assert "stateText.textContent" in source
+
+
 def test_cards_are_reused_between_polls(source):
     """Wiping the grid each poll would restart every bar transition."""
     assert 'innerHTML=""' not in source.replace(" ", "")

@@ -39,12 +39,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Reduced motion suppresses *movement* — travelling pulses, drifting
+   particles, confetti, anything that scales or changes position. Colour and
+   glow stay, because they carry the identity without being a vestibular
+   trigger, and the metric bars keep their width transition because that is
+   information rather than decoration. A blanket `animation: none` here would
+   flatten the header to a static logo, which is not what reduced motion asks
+   for. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001s !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001s !important;
-  }
+  .particle { display: none; }
+  .pulse.trail { display: none; }
+  .pulse { animation: none; stroke-dasharray: none; opacity: 0.95; }
+  .nodes circle { animation: none; opacity: 0.95; }
+  .i-decoding .ring { animation: none; opacity: 0.5; }
+  .team:hover { transform: none; }
 }
 
 /* ---------- HEADER ---------- */
@@ -70,8 +78,55 @@ header text {
   0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 218, 0, 0.5)); }
   50%      { filter: drop-shadow(0 0 24px rgba(255, 218, 0, 0.9)); }
 }
-.lines line { stroke-width: 2.5; opacity: 0.9; }
-.nodes circle { fill: var(--green); opacity: 0.9; filter: drop-shadow(0 0 4px var(--green)); }
+/* The zigzag is a pipeline, so run traffic down it: a dim wire, a bright
+   pulse travelling the dash overlay, and packets riding the same path. */
+.wire {
+  fill: none;
+  stroke: url(#flowGradient);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0.35;
+}
+.pulse {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 18 620;
+  filter: drop-shadow(0 0 6px var(--green));
+  animation: flow 3.2s linear infinite;
+}
+@keyframes flow {
+  from { stroke-dashoffset: 638; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* A second, offset pulse in yellow gives the wire two packets in flight. */
+.pulse.trail {
+  stroke: var(--yellow);
+  stroke-width: 2.5;
+  stroke-dasharray: 10 628;
+  filter: drop-shadow(0 0 6px var(--yellow));
+  animation-delay: -1.6s;
+}
+
+.nodes circle {
+  fill: var(--green);
+  filter: drop-shadow(0 0 4px var(--green));
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hop 3.2s ease-in-out infinite;
+}
+.nodes circle:nth-child(2) { animation-delay: 0.45s; }
+.nodes circle:nth-child(3) { animation-delay: 0.9s; }
+.nodes circle:nth-child(4) { animation-delay: 1.35s; }
+.nodes circle:nth-child(5) { animation-delay: 1.8s; }
+.nodes circle:nth-child(6) { animation-delay: 2.25s; }
+.nodes circle:nth-child(7) { animation-delay: 2.7s; }
+@keyframes hop {
+  0%, 70%, 100% { opacity: 0.55; transform: scale(1); }
+  12%           { opacity: 1;    transform: scale(1.9); }
+}
 
 #header-particles {
   position: absolute;
@@ -193,13 +248,52 @@ main { flex: 1; }
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.tick {
+
+/* State icon: decoding (pulsing dot), idle (hollow), decrypted (tick).
+   All three are rendered; the card's class decides which one shows. */
+.state {
   flex: none;
-  color: var(--green);
-  font-size: 1.1rem;
-  visibility: hidden;
+  align-self: center;
+  width: 1.15em;
+  height: 1.15em;
+  line-height: 0;
 }
-.team.complete .tick { visibility: visible; }
+.state svg { display: none; width: 100%; height: 100%; }
+.team.decoding .state .i-decoding,
+.team.idle     .state .i-idle,
+.team.complete .state .i-done { display: block; }
+
+.i-decoding { color: var(--green); }
+.i-idle     { color: rgba(205, 234, 192, 0.45); }
+.i-done     { color: var(--yellow); }
+
+.i-decoding .core { fill: currentColor; }
+.i-decoding .ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transform-origin: center;
+  animation: ping 1.8s ease-out infinite;
+}
+@keyframes ping {
+  0%   { transform: scale(0.5); opacity: 0.9; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.i-idle circle { fill: none; stroke: currentColor; stroke-width: 2; }
+.i-idle line { stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+.i-done circle { fill: currentColor; }
+.i-done path { fill: none; stroke: #004b2b; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 .metrics {
   display: grid;
@@ -268,34 +362,55 @@ footer {
   position: sticky;
   bottom: 0;
   margin-top: auto;
-  padding: 0.8rem 1rem;
-  background: rgba(0, 75, 43, 0.92);
-  color: #ccc;
+  padding: 0.85rem clamp(1rem, 3vw, 2.5rem);
+  background: rgba(0, 60, 34, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
   font-size: 0.9rem;
-  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1.5rem;
 }
-footer a { color: var(--yellow); text-decoration: none; }
-footer a:hover { text-decoration: underline; }
 
-#docs-link {
-  position: fixed;
-  right: 18px;
-  bottom: 14px;
-  z-index: 50;
-  padding: 8px 14px;
-  background: rgba(0, 122, 69, 0.9);
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  color: var(--yellow);
-  font-weight: 600;
-  font-size: 0.95rem;
+.footer-cred {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted);
   text-decoration: none;
-  transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
-#docs-link:hover {
-  background: var(--green-mid);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(0, 255, 120, 0.6);
+.footer-cred img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  flex: none;
+}
+.footer-cred strong { color: #fff; font-weight: 700; }
+.footer-cred:hover strong { color: var(--yellow); }
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.4rem;
+}
+.footer-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.footer-links a:hover { color: var(--yellow); }
+.footer-links svg {
+  width: 1.05em;
+  height: 1.05em;
+  fill: currentColor;
+  flex: none;
 }
 
 #burst { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
@@ -321,20 +436,20 @@ footer a:hover { text-decoration: underline; }
           <animate attributeName="stop-color" values="#ffda00;#00cc66;#00ff99;#ffda00" dur="8s" repeatCount="indefinite"/>
         </stop>
       </linearGradient>
+      <path id="flowPath" d="M100,110 L180,80 L260,110 L340,80 L420,110 L500,80 L580,110"/>
     </defs>
+
     <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle">Decrypt the Narrative</text>
-    <g class="lines">
-      <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
-      <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
-      <line x1="260" y1="110" x2="340" y2="80" stroke="url(#flowGradient)" />
-      <line x1="340" y1="80" x2="420" y2="110" stroke="url(#flowGradient)" />
-      <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
-      <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
-    </g>
+
+    <use href="#flowPath" class="wire"/>
+    <use href="#flowPath" class="pulse"/>
+
     <g class="nodes">
       <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
       <circle cx="340" cy="80" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
     </g>
+
+    <use href="#flowPath" class="pulse trail"/>
   </svg>
 </header>
 
@@ -368,14 +483,27 @@ footer a:hover { text-decoration: underline; }
   </div>
 </main>
 
-<a id="docs-link" href="/docs" target="_blank" rel="noopener">API Docs ↗</a>
-<footer>Designed by <a href="https://adamdavis.co.uk" target="_blank" rel="noopener">Adam Davis</a></footer>
+<footer>
+  <a class="footer-cred" href="https://adamdavis.co.uk" target="_blank" rel="noopener">
+    <img src="/static/adam.png" alt="Adam Davis" width="34" height="34">
+    <span>Built by <strong>Adam Davis</strong></span>
+  </a>
+  <div class="footer-links">
+    <a href="https://github.com/webmull/dcrypt.run" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.995 7.995 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      GitHub
+    </a>
+    <a href="/docs" target="_blank" rel="noopener">API Docs</a>
+    <a href="https://github.com/webmull/dcrypt.run/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+  </div>
+</footer>
 <canvas id="burst"></canvas>
 
 <script>
 "use strict";
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const IDLE_AFTER = 60; // seconds without a request before a team reads as idle
 
 /* ---------- Floating particles ---------- */
 (function particles() {
@@ -486,7 +614,20 @@ function buildCard() {
   const el = document.createElement("article");
   el.className = "team";
   el.innerHTML =
-    '<h2><span class="tick">&#10003;</span><span class="label"></span></h2>' +
+    '<h2>' +
+      '<span class="state" aria-hidden="true">' +
+        '<svg class="i-decoding" viewBox="0 0 24 24">' +
+          '<circle class="ring" cx="12" cy="12" r="7"/><circle class="core" cx="12" cy="12" r="4"/>' +
+        '</svg>' +
+        '<svg class="i-idle" viewBox="0 0 24 24">' +
+          '<circle cx="12" cy="12" r="8"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="14" y1="9" x2="14" y2="15"/>' +
+        '</svg>' +
+        '<svg class="i-done" viewBox="0 0 24 24">' +
+          '<circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.6 2.6L16 9.6"/>' +
+        '</svg>' +
+      '</span>' +
+      '<span class="label"></span><span class="sr-only state-text"></span>' +
+    '</h2>' +
     '<div class="metrics">' +
       '<div class="metric-label">Words</div><div class="metric-value words-text"></div>' +
       '<div class="bar"><div class="bar-fill words"></div></div>' +
@@ -497,6 +638,7 @@ function buildCard() {
     '</div>';
   el.refs = {
     label: el.querySelector(".label"),
+    stateText: el.querySelector(".state-text"),
     wordsText: el.querySelector(".words-text"),
     words: el.querySelector(".bar-fill.words"),
     requestsText: el.querySelector(".requests-text"),
@@ -546,7 +688,15 @@ function render(data) {
     const words = Math.max(0, Math.min(100, (seen / totalWords) * 100));
     const quota = Math.max(0, Math.min(100, ((t.remaining || 0) / quotaMax) * 100));
 
-    el.className = "team" + (t.completed ? " complete" : "");
+    // A team is idle once it has gone IDLE_AFTER without a request. Chaos can
+    // stall a single call for ~6s, so the threshold sits well clear of that.
+    const state = t.completed ? "complete"
+      : (t.idle_seconds || 0) >= IDLE_AFTER ? "idle"
+      : "decoding";
+
+    el.className = "team " + state;
+    el.refs.stateText.textContent = state === "complete" ? "Decrypted"
+      : state === "idle" ? "Idle" : "Decoding";
     el.refs.wordsText.textContent = seen + " / " + totalWords;
     el.refs.words.style.width = words + "%";
     el.refs.requestsText.textContent = (t.remaining || 0) + " / " + quotaMax;

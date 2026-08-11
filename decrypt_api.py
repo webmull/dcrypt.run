@@ -474,6 +474,9 @@ async def get_status():
             "chaos": len(CHAOS_EVENTS.get(team, ())),
             "tokens_issued": record.get("tokens_issued", 1),
             "duration": (completed_time or now) - start,
+            # Seconds since this team's last request, so the scoreboard can
+            # tell a team that is grinding from one that has wandered off.
+            "idle_seconds": now - token_data["timestamp"],
         })
 
     return {

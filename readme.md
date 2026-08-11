@@ -71,10 +71,17 @@ for a fresh token; progress is preserved across re-authentication. Re-auths are
 counted and displayed, so grinding is visible.
 
 Words are served at random, so this is a coupon-collector problem: expect to
-need several times more requests than there are words. At the default 55% chaos
-rate, budget roughly **8 requests per word** — a 75-word narrative takes around
-600 requests and 30 token refreshes to fully cover. Tune with `TOKEN_LIMIT` if
-that is more grinding than you want.
+need several times more requests than there are words. Measured against the
+live deployment with a 76-word narrative at the default 55% chaos rate, a
+working client took **880 requests and 46 re-authentications** — roughly 12
+requests per word. Tune `TOKEN_LIMIT` if that is more grinding than you want
+for your session length.
+
+Coverage alone is not the whole cost. Because `reverse_text` and
+`unicode_garble` corrupt a word without announcing it, a client generally needs
+*several* samples of each position and a majority vote to be confident — the
+run above reached full coverage at request 480 but did not submit correctly
+until request 880.
 
 ---
 
@@ -162,7 +169,21 @@ so no emoji.
 [`dashboard.html`](dashboard.html) — a single self-contained file, no build
 step, no external scripts. It polls `/status` every 1.5s and shows each team's
 word coverage, remaining quota, chaos absorbed and elapsed time. Completed
-teams sort to the top by finishing time, marked with a gold edge and a tick.
+teams sort to the top by finishing time.
+
+Each team carries a state icon, so the room can read the board at a glance
+without a legend:
+
+| Icon | State | Meaning |
+|---|---|---|
+| Pulsing green dot | Decoding | A request within the last 60s |
+| Hollow pause mark | Idle | Nothing for 60s+ — stuck, debugging, or gone |
+| Gold circled tick | Decrypted | Submitted correctly |
+
+Idle is driven by `idle_seconds` on `/status`, which is the age of the team's
+last request. It is genuinely useful while running an event: a board full of
+idle teams means the room is stuck and the briefing needs revisiting, not that
+the challenge is too hard.
 
 It is written to be projected in a room, and to survive being projected in a
 room:
@@ -311,7 +332,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-198 tests, roughly a second to run. They cover:
+204 tests, roughly a second to run. They cover:
 
 - **Auth** — name validation (including the XSS and blank-name payloads that
   the rules exist to block), token reuse, re-auth preserving progress, the
