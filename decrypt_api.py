@@ -504,6 +504,14 @@ async def redirect_dashboard():
     return RedirectResponse(url="/")
 
 
+@app.get("/about", include_in_schema=False)
+async def serve_about():
+    path = BASE_DIR / "about.html"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="about.html not found")
+    return FileResponse(path, media_type="text/html")
+
+
 @app.get("/health")
 async def health():
     return {

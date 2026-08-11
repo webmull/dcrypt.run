@@ -35,8 +35,34 @@ def test_dashboard_alias_redirects(client):
     assert res.headers["location"] == "/"
 
 
+def test_about_page_is_served(client):
+    res = client.get("/about")
+    assert res.status_code == 200
+    assert res.headers["content-type"].startswith("text/html")
+    assert "chaos-engineering challenge" in res.text
+
+
+def test_about_page_documents_every_chaos_event(client, api_mod):
+    """The overview is the briefing material, so it must stay in step."""
+    body = client.get("/about").text
+    for kind in api_mod.CHAOS_TYPES:
+        assert kind in body, f"{kind} is missing from the about page"
+
+
+def test_about_page_states_the_real_quota_and_chaos_rate(client, api_mod):
+    body = client.get("/about").text
+    assert str(api_mod.TOKEN_LIMIT) in body
+    assert f"{int(api_mod.CHAOS_RATE * 100)}%" in body
+
+
+def test_about_and_scoreboard_link_to_each_other(client):
+    assert '"/about"' in client.get("/").text
+    assert 'href="/"' in client.get("/about").text
+
+
 def test_static_assets_are_served(client):
     assert client.get("/static/favicon-32x32.png").status_code == 200
+    assert client.get("/static/adam.png").status_code == 200
 
 
 def test_solution_file_is_gone(client):
@@ -51,3 +77,21 @@ def test_no_static_file_contains_the_narrative(api_mod, narrative):
     for path in static.rglob("*"):
         if path.is_file() and path.suffix in {".txt", ".json", ".webmanifest", ".md", ".html"}:
             assert narrative.lower() not in path.read_text(errors="ignore").lower(), path
+
+
+def test_about_page_does_not_leak_the_narrative(client, api_mod, narrative):
+    """It is the most-read page, and it explains the puzzle without giving it away."""
+    body = client.get("/about").text.lower()
+    assert narrative.lower() not in body
+    for word in api_mod.WORDS:
+        assert f'"{word.lower()}"' not in body
+
+
+def test_about_page_has_no_external_scripts(api_mod):
+    """Same rule as the scoreboard: nothing to fail at event time."""
+    import re
+    from pathlib import Path
+
+    source = (Path(api_mod.BASE_DIR) / "about.html").read_text()
+    assert re.findall(r"<script[^>]*\ssrc=", source) == []
+    assert "<script" not in source

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>About — Decrypt the Narrative</title>
+<meta name="description" content="A chaos-engineering challenge: reassemble a hidden narrative from an API that misbehaves on purpose. What it is, how it works, and how to run it yourself." />
+<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+<link rel="manifest" href="/static/site.webmanifest">
+<style>
+/* Deliberately self-contained, like the scoreboard: no build step, and a page
+   that cannot be broken by a stylesheet failing to arrive. The shared shell
+   (palette, header, footer) is duplicated across the two pages — with only
+   two of them, that is cheaper than introducing a pipeline. */
+:root {
+  --bg:        #004b2b;
+  --card:      rgba(0, 104, 55, 0.9);
+  --ink:       #f7f7f7;
+  --muted:     #cdeac0;
+  --yellow:    #ffda00;
+  --green:     #00ff99;
+  --green-mid: #00cc66;
+  --alert:     #ff8a4c;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.7;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse.trail { display: none; }
+  .pulse { animation: none; stroke-dasharray: none; opacity: 0.95; }
+  .nodes circle { animation: none; opacity: 0.95; }
+}
+
+/* ---------- TOP NAV ---------- */
+.topnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem clamp(1rem, 3vw, 2rem);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.92rem;
+}
+.topnav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+.topnav a:hover { color: var(--yellow); }
+.topnav .home { color: var(--yellow); }
+
+/* ---------- HEADER ---------- */
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.8rem 0 0;
+}
+header svg.title { width: 700px; max-width: 92%; height: 130px; }
+header text {
+  font-family: var(--sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-size: 40px;
+  fill: var(--yellow);
+  filter: drop-shadow(0 0 8px rgba(255, 218, 0, 0.6));
+  animation: textGlow 5s ease-in-out infinite;
+}
+@keyframes textGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 218, 0, 0.5)); }
+  50%      { filter: drop-shadow(0 0 24px rgba(255, 218, 0, 0.9)); }
+}
+.wire { fill: none; stroke: url(#flowGradient); stroke-width: 2.5; stroke-linecap: round; opacity: 0.35; }
+.pulse {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 18 620;
+  filter: drop-shadow(0 0 6px var(--green));
+  animation: flow 3.2s linear infinite;
+}
+.pulse.trail {
+  stroke: var(--yellow);
+  stroke-width: 2.5;
+  stroke-dasharray: 10 628;
+  filter: drop-shadow(0 0 6px var(--yellow));
+  animation-delay: -1.6s;
+}
+@keyframes flow {
+  from { stroke-dashoffset: 638; }
+  to   { stroke-dashoffset: 0; }
+}
+.nodes circle {
+  fill: var(--green);
+  filter: drop-shadow(0 0 4px var(--green));
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hop 3.2s ease-in-out infinite;
+}
+.nodes circle:nth-child(2) { animation-delay: 0.45s; }
+.nodes circle:nth-child(3) { animation-delay: 0.9s; }
+.nodes circle:nth-child(4) { animation-delay: 1.35s; }
+.nodes circle:nth-child(5) { animation-delay: 1.8s; }
+.nodes circle:nth-child(6) { animation-delay: 2.25s; }
+.nodes circle:nth-child(7) { animation-delay: 2.7s; }
+@keyframes hop {
+  0%, 70%, 100% { opacity: 0.55; transform: scale(1); }
+  12%           { opacity: 1;    transform: scale(1.9); }
+}
+
+/* ---------- LAYOUT ---------- */
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 54rem;
+  margin: 0 auto;
+  padding: 1rem clamp(1.1rem, 4vw, 2rem) 3rem;
+}
+
+.lede {
+  font-size: clamp(1.1rem, 2.1vw, 1.4rem);
+  color: var(--ink);
+  margin: 0 0 1.6rem;
+}
+.lede strong { color: var(--yellow); }
+
+h2 {
+  margin: 2.8rem 0 0.8rem;
+  font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+  color: var(--yellow);
+  line-height: 1.3;
+}
+h3 {
+  margin: 1.8rem 0 0.5rem;
+  font-size: 1.05rem;
+  color: var(--green);
+}
+p { margin: 0 0 1.1rem; color: var(--muted); }
+p.tight { margin-bottom: 0.5rem; }
+strong { color: var(--ink); }
+a { color: var(--yellow); }
+a:hover { text-decoration: none; }
+
+hr {
+  margin: 2.6rem 0 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+ul { margin: 0 0 1.1rem; padding-left: 1.2rem; color: var(--muted); }
+li { margin-bottom: 0.45rem; }
+li::marker { color: var(--green-mid); }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.35em;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  color: var(--green);
+}
+
+pre {
+  margin: 0 0 1.3rem;
+  padding: 1rem 1.1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow-x: auto;
+  line-height: 1.55;
+}
+pre code {
+  padding: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+pre .c { color: rgba(205, 234, 192, 0.6); }
+pre .k { color: var(--yellow); }
+
+/* ---------- CALLOUT + CTA ---------- */
+.callout {
+  margin: 0 0 1.3rem;
+  padding: 1rem 1.2rem;
+  background: var(--card);
+  border-left: 3px solid var(--green);
+  border-radius: 0 10px 10px 0;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout.warn { border-left-color: var(--yellow); }
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 1.8rem 0 0;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn.primary {
+  background: var(--yellow);
+  color: #003a20;
+}
+.btn.primary:hover { box-shadow: 0 0 14px rgba(255, 218, 0, 0.5); }
+.btn.ghost {
+  background: rgba(0, 122, 69, 0.9);
+  color: var(--yellow);
+  border: 1px solid rgba(255, 218, 0, 0.35);
+}
+.btn.ghost:hover { background: var(--green-mid); color: #fff; }
+.btn svg { width: 1.05em; height: 1.05em; fill: currentColor; flex: none; }
+
+/* ---------- CHAOS TABLE ---------- */
+.table-wrap {
+  margin: 0 0 1.3rem;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  min-width: 34rem;
+}
+th, td {
+  padding: 0.6rem 0.9rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  vertical-align: top;
+}
+th {
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--yellow);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+td:first-child { white-space: nowrap; }
+td code { color: var(--green); }
+td { color: var(--muted); }
+.counts { color: var(--green); font-weight: 700; }
+.counts-no { color: var(--alert); font-weight: 700; }
+
+/* ---------- FOOTER ---------- */
+footer {
+  margin-top: auto;
+  padding: 0.85rem clamp(1rem, 3vw, 2.5rem);
+  background: rgba(0, 60, 34, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1.5rem;
+}
+.footer-cred {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+.footer-cred img {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  flex: none;
+}
+.footer-cred strong { color: #fff; font-weight: 700; }
+.footer-cred:hover strong { color: var(--yellow); }
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.4rem;
+}
+.footer-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.footer-links a:hover { color: var(--yellow); }
+.footer-links svg { width: 1.05em; height: 1.05em; fill: currentColor; flex: none; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="home" href="/">&larr; Live scoreboard</a>
+  <a href="/docs">API docs</a>
+</nav>
+
+<header>
+  <a href="/" aria-label="Live scoreboard">
+    <svg class="title" viewBox="0 0 700 150" role="img" aria-label="Decrypt the Narrative">
+      <defs>
+        <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#00ff99">
+            <animate attributeName="stop-color" values="#00ff99;#ffda00;#00cc66;#00ff99" dur="8s" repeatCount="indefinite"/>
+          </stop>
+          <stop offset="100%" stop-color="#ffda00">
+            <animate attributeName="stop-color" values="#ffda00;#00cc66;#00ff99;#ffda00" dur="8s" repeatCount="indefinite"/>
+          </stop>
+        </linearGradient>
+        <path id="flowPath" d="M100,110 L180,80 L260,110 L340,80 L420,110 L500,80 L580,110"/>
+      </defs>
+      <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle">Decrypt the Narrative</text>
+      <use href="#flowPath" class="wire"/>
+      <use href="#flowPath" class="pulse"/>
+      <use href="#flowPath" class="pulse trail"/>
+      <g class="nodes">
+        <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
+        <circle cx="340" cy="80" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
+      </g>
+    </svg>
+  </a>
+</header>
+
+<main>
+
+<p class="lede">
+  A hidden narrative has been shattered into single words. Collect the fragments
+  from the API and put the sentence back together. <strong>The catch is that the
+  API misbehaves on purpose.</strong>
+</p>
+
+<p>
+  This is a chaos-engineering challenge, originally built for a university
+  hackathon and now free for anyone to play or host. It takes a few minutes to
+  understand and a few hours to beat, and the difficulty is not in the puzzle —
+  it is in the transport.
+</p>
+
+<div class="callout">
+  <p>
+    The real question is not <em>can you call an HTTP endpoint</em>. It is:
+    <strong>can you write a client that keeps working when the server is
+    actively lying to you?</strong>
+  </p>
+</div>
+
+<h2>The loop</h2>
+
+<p>Three endpoints. Register, collect, submit.</p>
+
+<pre><code><span class="c"># 1. Register your team and get a token</span>
+<span class="k">curl</span> -X POST https://dcrypt.run/auth -H <span class="k">"team: your-team"</span>
+<span class="c"># {"token":"3f2b9c14-...","team":"your-team","remaining":20}</span>
+
+<span class="c"># 2. Collect one word at a time. This is the part that fights back.</span>
+<span class="k">curl</span> https://dcrypt.run/fragment \
+  -H <span class="k">"team: your-team"</span> -H <span class="k">"token: 3f2b9c14-..."</span>
+<span class="c"># {"word":"lorem","position":4}</span>
+
+<span class="c"># 3. Submit once you have every word</span>
+<span class="k">curl</span> -X POST https://dcrypt.run/validate \
+  -H <span class="k">"team: your-team"</span> -H <span class="k">"token: 3f2b9c14-..."</span> \
+  -H <span class="k">"Content-Type: application/json"</span> \
+  -d <span class="k">'{"submission":"lorem ipsum dolor sit amet ..."}'</span></code></pre>
+
+<p>
+  Every fragment carries its <code>position</code>, so reassembly is a sorting
+  problem rather than a guessing game. No signup, no API keys, no rate-limit
+  paperwork — pick a team name and start.
+</p>
+
+<h2>The API lies to you</h2>
+
+<p>
+  Roughly <strong>55% of fragment requests misbehave</strong>, across twelve
+  failure modes. All of them are things that happen to real distributed systems,
+  just compressed into a single afternoon.
+</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Event</th><th>What your client sees</th><th>Word usable?</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>delay</code></td><td>The real fragment, 0.5–5s late</td><td class="counts">Yes</td></tr>
+    <tr><td><code>slow_burst</code></td><td>The real fragment, after several stacked pauses</td><td class="counts">Yes</td></tr>
+    <tr><td><code>token_drain</code></td><td>The real fragment, and 1–3 extra quota silently gone</td><td class="counts">Yes</td></tr>
+    <tr><td><code>out_of_order</code></td><td>A genuine fragment, but always from the tail of the text</td><td class="counts">Yes</td></tr>
+    <tr><td><code>duplicate_fragment</code></td><td><code>{"fragments":[x,x]}</code> — a different shape entirely</td><td class="counts">Yes</td></tr>
+    <tr><td><code>malformed_json</code></td><td><code>200 OK</code>, labelled JSON, truncated body</td><td class="counts-no">No</td></tr>
+    <tr><td><code>broken_json</code></td><td><code>200 OK</code>, a body that was never JSON</td><td class="counts-no">No</td></tr>
+    <tr><td><code>html_injection</code></td><td><code>200 OK</code>, an HTML error page labelled as JSON</td><td class="counts-no">No</td></tr>
+    <tr><td><code>empty_response</code></td><td><code>200 OK</code> with <code>{}</code></td><td class="counts-no">No</td></tr>
+    <tr><td><code>error_code</code></td><td><code>418</code>, <code>429</code>, <code>500</code> or <code>504</code></td><td class="counts-no">No</td></tr>
+    <tr><td><code>reverse_text</code></td><td>A fragment whose word is reversed</td><td class="counts-no">Corrupt</td></tr>
+    <tr><td><code>unicode_garble</code></td><td>A fragment whose word has junk appended</td><td class="counts-no">Corrupt</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+  Delays scale with how long your team has been running, up to double, so the
+  system gets <em>worse</em> under sustained load. Which is, of course, the
+  point.
+</p>
+
+<h3>What each one is really teaching you</h3>
+
+<ul>
+  <li>Do not trust the status code.</li>
+  <li>Do not trust the <code>Content-Type</code>.</li>
+  <li>Do not assume the response shape is stable.</li>
+  <li>Do not assume a successful HTTP call means you received data.</li>
+  <li>And the hardest one: <strong>do not assume data that parsed is correct.</strong></li>
+</ul>
+
+<div class="callout warn">
+  <p>
+    <code>reverse_text</code> and <code>unicode_garble</code> corrupt a word
+    <em>without telling you</em>. There is no flag, no error, no clue in the
+    response. The only defence is to sample each position several times and take
+    the value you saw most often — so a strong client has to reason about
+    confidence, not just parsing.
+  </p>
+</div>
+
+<h2>The quota economy</h2>
+
+<p>
+  A token is worth <strong>20 requests</strong>, and every call spends one
+  <strong>whether or not it returns anything useful</strong>. A <code>500</code>,
+  an empty body and a clean word all cost exactly the same. This is deliberate:
+  it means "retry until it works" runs out of road, and you have to think about
+  what a request is worth.
+</p>
+
+<p>
+  When your quota runs out, call <code>/auth</code> again for a fresh token.
+  Your progress is preserved across re-authentication, and the scoreboard counts
+  how many times you have had to do it.
+</p>
+
+<h2>What counts as progress</h2>
+
+<p>
+  Your score is <strong>distinct words received intact</strong> — not requests
+  made. The server tracks this itself, so it cannot be talked into accepting a
+  guess. You will not be allowed to submit until every word has genuinely
+  reached you, and until then <code>/validate</code> tells you exactly where you
+  are:
+</p>
+
+<pre><code>{"detail":"You've seen 41 of 50 words. Keep exploring fragments before submitting."}</code></pre>
+
+<p>
+  Corrupted deliveries do not count. Final comparison ignores case, punctuation
+  and extra whitespace, so you are marked on recovering the words and their
+  order — not on reproducing the punctuation.
+</p>
+
+<h3>For calibration</h3>
+
+<p>
+  Against the live narrative, a working client needed <strong>880 requests and
+  46 re-authentications</strong>. It reached full word coverage at request 480
+  and <em>still</em> submitted the wrong answer twice, because its majority vote
+  was losing to a reversed word. Budget accordingly.
+</p>
+
+<h2>The scoreboard</h2>
+
+<p>
+  Every team appears on the <a href="/">live scoreboard</a> as soon as it
+  authenticates: words recovered, quota remaining, chaos absorbed, time elapsed,
+  and whether it is actively decoding, idle, or finished. It refreshes every
+  second and a half and is built to be projected on a wall.
+</p>
+
+<h2>Run your own</h2>
+
+<p>
+  The whole thing is open source under MIT — one Python module and a
+  self-contained HTML scoreboard, with no build step.
+</p>
+
+<p>
+  The narrative is supplied through a <code>NARRATIVE_TEXT</code> environment
+  variable, which means <strong>the answer is not in the repository</strong>. You
+  can read every line of the source without spoiling the hosted puzzle, and set
+  your own text for your own event. Chaos rate, quota size and timeouts are all
+  environment variables too, and the chaos rate can be turned down mid-event if
+  the room gets stuck.
+</p>
+
+<pre><code>export NARRATIVE_TEXT=<span class="k">"Whatever sentence your teams should reassemble."</span>
+uvicorn decrypt_api:app</code></pre>
+
+<p>
+  If you run a hackathon, a graduate onboarding week, or a resilience workshop,
+  help yourself.
+</p>
+
+<div class="cta">
+  <a class="btn primary" href="/">&larr; Back to the live scoreboard</a>
+  <a class="btn ghost" href="/docs">API documentation</a>
+  <a class="btn ghost" href="https://github.com/webmull/dcrypt.run" target="_blank" rel="noopener">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.995 7.995 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+    Source on GitHub
+  </a>
+</div>
+
+<hr>
+
+</main>
+
+<footer>
+  <a class="footer-cred" href="https://adamdavis.co.uk" target="_blank" rel="noopener">
+    <img src="/static/adam.png" alt="Adam Davis" width="34" height="34">
+    <span>Built by <strong>Adam Davis</strong></span>
+  </a>
+  <div class="footer-links">
+    <a href="/">Scoreboard</a>
+    <a href="https://github.com/webmull/dcrypt.run" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.995 7.995 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      GitHub
+    </a>
+    <a href="/docs" target="_blank" rel="noopener">API Docs</a>
+    <a href="https://github.com/webmull/dcrypt.run/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+  </div>
+</footer>
+
+</body>
+</html>

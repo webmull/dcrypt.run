@@ -151,6 +151,7 @@ documentation cannot quietly drift from the code.
 | `GET /status` | Live scoreboard data (public, read-only) |
 | `GET /health` | Liveness probe |
 | `GET /` | The scoreboard |
+| `GET /about` | Challenge overview — the page to put in front of teams |
 
 ### Team names
 
@@ -332,7 +333,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-204 tests, roughly a second to run. They cover:
+210 tests, roughly a second to run. They cover:
 
 - **Auth** — name validation (including the XSS and blank-name payloads that
   the rules exist to block), token reuse, re-auth preserving progress, the
@@ -360,6 +361,7 @@ pytest
 ```
 decrypt_api.py      The whole API — endpoints, chaos, state, persistence
 dashboard.html      Self-contained scoreboard
+about.html          Self-contained challenge overview, served at /about
 openapi.yaml        Hand-written spec, served verbatim at /docs
 Procfile            Deployment entrypoint
 requirements.txt    Runtime dependencies
