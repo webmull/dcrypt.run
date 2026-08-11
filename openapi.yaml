@@ -1,20 +1,55 @@
 openapi: 3.1.0
 info:
   title: Decrypt the Narrative API
-  version: 1.2.0
+  version: 2.0.0
+  description: |
+    A chaos-engineering challenge. A hidden narrative has been shattered into
+    single-word fragments. Authenticate as a team, pull fragments from a
+    deliberately unreliable endpoint, and reassemble the original text.
+
+    **The rules of the game**
+
+    1. `POST /auth` with a `team` header to get a token and a request quota.
+    2. `GET /fragment` with `team` + `token` headers to pull one word. Roughly
+       half of these calls misbehave on purpose.
+    3. When you have seen every distinct word, `POST /validate` with your
+       reconstructed sentence.
+
+    **What you are being marked on**
+
+    Every request costs quota whether it succeeds or not, so the challenge
+    rewards code that treats the network as hostile: validate payloads before
+    trusting them, retry with backoff, and never assume a `200` means the body
+    parsed.
+
+servers:
+  - url: https://dcrypt.run
+    description: Live challenge server
+
+tags:
+  - name: Challenge
+    description: The endpoints teams interact with
+  - name: Telemetry
+    description: Read-only endpoints powering the live dashboard
+
 paths:
   /auth:
     post:
-      summary: Issue a token or return existing valid one
+      tags: [Challenge]
+      summary: Issue a token, or return the team's existing one
       description: |
-        Authenticate a team and issue or reuse a token.
+        Register a team and receive a token plus a fragment quota.
 
-        **Hints:**
-        - Include your team name in the `team` header.
-        - Team names must be ≤20 characters (letters, numbers, spaces, underscores only).
-        - Using the same name again reuses the same token (until idle timeout).
-        - If you hit `"Token expired"`, just call `/auth` again.
-        - The number in `remaining` shows how many `/fragment` requests you have left.
+        **Hints**
+        - Put your team name in the `team` header.
+        - Names are 1–20 characters: letters, digits, spaces, underscores and
+          hyphens only, and must start with a letter or digit. Anything else is
+          a `400`. Header values are ASCII, so no emoji.
+        - Calling again with the same name returns the *same* token while quota
+          remains, so this is safe to retry.
+        - Once your quota hits zero, call `/auth` again for a fresh token. This
+          is the intended way to keep going — you will need several rounds.
+        - `remaining` tells you how many requests you have left.
       parameters:
         - name: team
           in: header
@@ -22,8 +57,11 @@ paths:
           schema:
             type: string
             maxLength: 20
-            pattern: "^[A-Za-z0-9 _]+$"
-          description: Team name (max 20 chars; letters, digits, spaces, underscores only)
+            pattern: "^[A-Za-z0-9](?:[A-Za-z0-9 _-]{0,18}[A-Za-z0-9_-])?$"
+          description: >-
+            Team name: 1-20 chars, letters, digits, spaces, underscores and
+            hyphens, starting with a letter or digit
+          example: team-alpha
       responses:
         "200":
           description: Token issued or reused
@@ -31,135 +69,395 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [token, team, remaining]
                 properties:
-                  token: { type: string }
+                  token:
+                    type: string
+                    format: uuid
+                    description: Bearer value for the `token` header on later calls
                   team: { type: string }
-                  remaining: { type: integer }
+                  remaining:
+                    type: integer
+                    description: Fragment requests left on this token
+              example:
+                token: 3f2b9c14-8e7a-4d51-9b0e-6a1c2d3e4f50
+                team: team-alpha
+                remaining: 20
         "400":
-          description: Missing or invalid team header
+          description: Missing `team` header, or a name that fails the pattern
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                missing:
+                  value: { detail: Missing team header }
+                invalid:
+                  value:
+                    detail: >-
+                      Invalid team name: max 20 characters, letters, digits,
+                      spaces, underscores and hyphens only
         "403":
-          description: Forbidden
-        "401":
-          description: Unauthorized
+          description: The server is already at its active-team limit
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { detail: Team limit reached. Please try again later. }
 
   /fragment:
     get:
-      summary: Return a random fragment or chaos response
+      tags: [Challenge]
+      summary: Return a random fragment, or whatever chaos decides instead
       description: |
-        Retrieve a random word fragment or trigger a chaos event (~55% chance).
+        Pull one word of the narrative. **Every call costs one unit of quota,
+        including the ones chaos ruins.**
 
-        **Hints:**
-        - Requires both `team` and `token` headers from `/auth`.
-        - Each successful call decrements your token quota.
-        - Chaos may strike randomly. Possible effects include:
-          - **Delay:** Slow or delayed response.
-          - **Malformed JSON:** Truncated or invalid payload.
-          - **Broken JSON:** Garbled body, won't parse.
-          - **Error code:** 418, 429, 500, or 504 responses.
-          - **Duplicate fragment:** Two of the same fragment.
-          - **Empty response:** `{}` returned.
-          - **HTML injection:** Non-JSON content disguised as JSON.
-          - **Slow burst:** Multiple small pauses.
-          - **Token drain:** Reduces your remaining quota by extra 1–3.
-          - **Reverse text:** Word reversed.
-          - **Unicode garble:** Adds strange Unicode symbols.
-          - **Out of order:** Returns fragment from the end of the text.
-          - There could be more, don't trust HTTP status codes....
-        - Handle every case gracefully—resilience and retry logic are key.
+        **Chaos events** fire on roughly 55% of calls. The full catalogue:
+
+        | Event | What you get |
+        |---|---|
+        | `delay` | The real fragment, 0.5–5s late |
+        | `slow_burst` | The real fragment after several stacked pauses |
+        | `token_drain` | The real fragment, minus an extra 1–3 quota |
+        | `malformed_json` | `200` with a truncated body that will not parse |
+        | `broken_json` | `200` with a body that was never JSON |
+        | `html_injection` | `200` with an HTML error page, `Content-Type: application/json` |
+        | `empty_response` | `200` with `{}` |
+        | `error_code` | `418`, `429`, `500` or `504` |
+        | `duplicate_fragment` | `{"fragments": [x, x]}` — a different shape entirely |
+        | `out_of_order` | A genuine fragment, but from the tail of the text |
+        | `reverse_text` | A fragment whose `word` is reversed |
+        | `unicode_garble` | A fragment whose `word` has junk appended |
+
+        **Which responses actually count**
+
+        Only words that reach you *intact* advance your coverage. `delay`,
+        `slow_burst`, `token_drain`, `duplicate_fragment` and `out_of_order`
+        deliver genuine words, so they count. `reverse_text` and
+        `unicode_garble` are corrupted, so they do not — and neither does any
+        response that carried no word at all.
+
+        **Hints**
+        - Do not trust the status code. Do not trust `Content-Type`. Parse
+          defensively and check the shape of what you got.
+        - The response may be a single fragment object *or* a `fragments`
+          array. Handle both.
+        - Delays scale up the longer your team has been running.
       parameters:
-        - name: team
-          in: header
-          required: true
-          schema: { type: string }
-        - name: token
-          in: header
-          required: true
-          schema: { type: string }
+        - $ref: "#/components/parameters/TeamHeader"
+        - $ref: "#/components/parameters/TokenHeader"
       responses:
         "200":
-          description: Normal or chaotic fragment response
+          description: |
+            A fragment, a differently-shaped payload, or something that is not
+            valid JSON at all despite the content type.
           content:
             application/json:
               schema:
                 oneOf:
+                  - $ref: "#/components/schemas/Fragment"
                   - type: object
-                    properties:
-                      word: { type: string }
-                      position: { type: integer }
-                  - type: object
+                    title: Duplicated fragments
                     properties:
                       fragments:
                         type: array
-                        items:
-                          type: object
-                          properties:
-                            word: { type: string }
-                            position: { type: integer }
+                        items: { $ref: "#/components/schemas/Fragment" }
                   - type: object
-                    description: May be empty or malformed
+                    title: Empty or unparseable
+                    description: |
+                      `{}`, a truncated JSON string, or an HTML document. Not
+                      every 200 from this endpoint is JSON.
+              examples:
+                fragment:
+                  value: { word: lorem, position: 4 }
+                duplicate:
+                  value:
+                    fragments:
+                      - { word: ipsum, position: 31 }
+                      - { word: ipsum, position: 31 }
+                empty:
+                  value: {}
         "400":
-          description: Missing headers or bad request
+          description: Missing `team` or `token` header
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { detail: Missing team or token header }
         "401":
-          description: Token expired
+          description: No active token for this team, or the token went idle
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                none:
+                  value: { detail: No active token found for team }
+                expired:
+                  value: { detail: Token expired. Please re-authenticate. }
         "403":
-          description: Invalid token or limit reached
+          description: Wrong token for this team, or quota exhausted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                mismatch:
+                  value: { detail: Invalid token for team }
+                exhausted:
+                  value: { detail: Token limit reached }
         "418":
-          description: Chaos error (418)
+          description: Chaos event — not a real server state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { detail: Chaos error event triggered }
         "429":
-          description: Chaos error (429)
+          description: Chaos event — not real rate limiting
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { detail: Chaos error event triggered }
         "500":
-          description: Chaos error (500)
+          description: Chaos event — not a real failure
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { detail: Chaos error event triggered }
         "504":
-          description: Chaos error (504)
+          description: Chaos event — not a real timeout
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { detail: Chaos error event triggered }
 
   /validate:
     post:
-      summary: Validate a team's submitted sentence
+      tags: [Challenge]
+      summary: Submit your reconstructed narrative
       description: |
-        Submit your full reconstructed sentence for validation.
+        Compare your reconstruction against the canonical text.
 
-        **Hints:**
-        - Include both `team` and `token` headers from `/auth`.
-        - Body must contain a `submission` field with your full sentence.
-        - Comparison ignores punctuation and case.
-        - On failure, you can correct and retry.
-        - On success, you’ll see:
-          - `"status": "success"`
-          - `"duration"` showing total time taken.
-          - `"completed_at"` timestamp.
+        **Hints**
+        - The coverage gate is free. A real attempt costs one unit of quota, so
+          brute-forcing wrong answers is expensive.
+        - You cannot submit until every distinct word has reached you intact.
+          Until then you get a `403` telling you your exact coverage.
+        - Comparison ignores case, punctuation and extra whitespace — get the
+          words and their order right and you are fine.
+        - A wrong answer is a `400`. Fix it and retry.
       parameters:
-        - name: team
-          in: header
-          required: true
-          schema: { type: string }
-        - name: token
-          in: header
-          required: true
-          schema: { type: string }
+        - $ref: "#/components/parameters/TeamHeader"
+        - $ref: "#/components/parameters/TokenHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [submission]
               properties:
                 submission:
                   type: string
-                  description: Full reconstructed sentence
+                  description: Your full reconstructed narrative
+            example:
+              submission: lorem ipsum dolor sit amet consectetur adipiscing elit
       responses:
         "200":
-          description: Successful validation
+          description: Correct — challenge complete
           content:
             application/json:
               schema:
                 type: object
+                required: [team, status, message, completed_at, duration]
                 properties:
                   team: { type: string }
-                  status: { type: string }
+                  status: { type: string, const: success }
                   message: { type: string }
-                  completed_at: { type: number }
-                  duration: { type: number }
+                  completed_at:
+                    type: number
+                    description: Unix timestamp of completion
+                  duration:
+                    type: number
+                    description: Seconds from first `/auth` to completion
+              example:
+                team: team-alpha
+                status: success
+                message: Correct submission! Challenge complete.
+                completed_at: 1770000000.123
+                duration: 1421.87
         "400":
-          description: Incorrect or missing submission
+          description: Missing `submission` field, or the reconstruction is wrong
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                missing:
+                  value: { detail: Missing submission }
+                incorrect:
+                  value: { detail: Incorrect submission }
+        "401":
+          description: No active token for this team, or the token went idle
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { detail: Token expired. Please re-authenticate. }
         "403":
-          description: Invalid or expired token
+          description: |
+            Wrong token, quota exhausted, or you have not seen every word yet.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                coverage:
+                  value:
+                    detail: You've seen 41 of 50 words. Keep exploring fragments before submitting.
+                exhausted:
+                  value: { detail: Token limit reached }
+        "422":
+          description: Body was not a JSON object
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /status:
+    get:
+      tags: [Telemetry]
+      summary: Live scoreboard state
+      description: |
+        Everything the dashboard renders. Unauthenticated and safe to poll —
+        it never mutates state and never leaks any part of the narrative.
+      responses:
+        "200":
+          description: Current state of every active team
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [teams, total_chaos, total_words, recent_chaos, uptime]
+                properties:
+                  teams:
+                    type: array
+                    items: { $ref: "#/components/schemas/TeamStatus" }
+                  total_chaos:
+                    type: integer
+                    description: Chaos events fired across all active teams
+                  total_words:
+                    type: integer
+                    description: Distinct words in the narrative
+                  recent_chaos:
+                    type: array
+                    description: The 30 most recent chaos events, newest first
+                    items:
+                      type: object
+                      required: [ts, type, team]
+                      properties:
+                        ts: { type: number }
+                        type:
+                          type: string
+                          enum: [delay, malformed_json, broken_json, error_code,
+                                 duplicate_fragment, empty_response, html_injection,
+                                 slow_burst, token_drain, reverse_text,
+                                 unicode_garble, out_of_order]
+                        team: { type: string }
+                  uptime:
+                    type: number
+                    description: Seconds since the server started
+
+  /health:
+    get:
+      tags: [Telemetry]
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Server is up
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, uptime, teams_active, narrative_configured]
+                properties:
+                  ok: { type: boolean, const: true }
+                  uptime:
+                    type: number
+                    description: Seconds since the server started
+                  teams_active: { type: integer }
+                  narrative_configured:
+                    type: boolean
+                    description: |
+                      `false` means `NARRATIVE_TEXT` is unset and the server is
+                      serving the placeholder narrative.
+              example:
+                ok: true
+                uptime: 8321.4
+                teams_active: 12
+                narrative_configured: true
+
+components:
+  parameters:
+    TeamHeader:
+      name: team
+      in: header
+      required: true
+      schema: { type: string, maxLength: 20 }
+      description: Your team name, exactly as registered with `/auth`
+      example: team-alpha
+    TokenHeader:
+      name: token
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+      description: The token returned by `/auth`
+      example: 3f2b9c14-8e7a-4d51-9b0e-6a1c2d3e4f50
+
+  schemas:
+    Fragment:
+      type: object
+      title: Fragment
+      required: [word, position]
+      properties:
+        word:
+          type: string
+          description: One word of the narrative. May be corrupted by chaos.
+        position:
+          type: integer
+          minimum: 0
+          description: Zero-based index of this word in the narrative
+
+    TeamStatus:
+      type: object
+      title: Team status
+      required: [team, unique_seen, requests_ok, submissions, remaining, max,
+                 completed, chaos, tokens_issued, duration]
+      properties:
+        team: { type: string }
+        unique_seen:
+          type: integer
+          description: Distinct words delivered intact — this is the progress metric
+        requests_ok:
+          type: integer
+          description: Fragment calls that returned a usable word
+        submissions:
+          type: integer
+          description: Scored `/validate` attempts
+        remaining:
+          type: integer
+          description: Quota left on the current token
+        max:
+          type: integer
+          description: Quota this token started with
+        completed: { type: boolean }
+        chaos:
+          type: integer
+          description: Chaos events this team has absorbed
+        tokens_issued:
+          type: integer
+          description: How many times this team has had to re-authenticate
+        duration:
+          type: number
+          description: |
+            Seconds since first `/auth`, frozen at completion time for teams
+            that have finished.
+
+    Error:
+      type: object
+      title: Error
+      required: [detail]
+      properties:
+        detail: { type: string }

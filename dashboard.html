@@ -4,89 +4,144 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Decrypt the Narrative</title>
+<meta name="description" content="Live scoreboard for the Decrypt the Narrative chaos-engineering challenge." />
 <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
 <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 <link rel="manifest" href="/static/site.webmanifest">
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-body {
-  margin: 0;
-  background: #004b2b;
-  color: #f7f7f7;
-  font-family: 'Inter', sans-serif;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  overflow-x: hidden;
+:root {
+  --bg:        #004b2b;
+  --card:      rgba(0, 104, 55, 0.9);
+  --card-done: rgba(0, 122, 69, 0.95);
+  --ink:       #f7f7f7;
+  --muted:     #cdeac0;
+  --yellow:    #ffda00;
+  --green:     #00ff99;
+  --green-mid: #00cc66;
+  --alert:     #ff8a4c;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 
-/* HEADER */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+}
+
+/* ---------- HEADER ---------- */
 header {
   position: relative;
   display: flex;
-  justify-content: center;
-  align-items: center;
   flex-direction: column;
-  margin-top: 0.8rem;
-  margin-bottom: 0.5rem;
+  align-items: center;
+  margin: 0.8rem 0 0.5rem;
 }
-header svg.title {
-  width: 760px;
-  max-width: 95%;
-  height: 150px;
-}
+header svg.title { width: 760px; max-width: 95%; height: 150px; }
 header text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--sans);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 3px;
-  fill: #ffda00;
-  filter: drop-shadow(0 0 8px rgba(255,218,0,0.6));
-  animation: textGlow 5s ease-in-out infinite;
   font-size: 40px;
+  fill: var(--yellow);
+  filter: drop-shadow(0 0 8px rgba(255, 218, 0, 0.6));
+  animation: textGlow 5s ease-in-out infinite;
 }
 @keyframes textGlow {
-  0%,100% { filter: drop-shadow(0 0 8px rgba(255,218,0,0.5)); }
-  50% { filter: drop-shadow(0 0 24px rgba(255,218,0,0.9)); }
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 218, 0, 0.5)); }
+  50%      { filter: drop-shadow(0 0 24px rgba(255, 218, 0, 0.9)); }
 }
-.lines line { stroke-width: 2.5; opacity: .9; }
-.nodes circle { fill: #00ff99; opacity: .9; filter: drop-shadow(0 0 4px #00ff99); }
+.lines line { stroke-width: 2.5; opacity: 0.9; }
+.nodes circle { fill: var(--green); opacity: 0.9; filter: drop-shadow(0 0 4px var(--green)); }
 
-/* PARTICLES */
 #header-particles {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  overflow: hidden; z-index: 0; pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
 }
 .particle {
-  position: absolute; width: 5px; height: 5px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #ffda00 0%, #00ff99 100%);
-  opacity: .4; animation: float 12s linear infinite;
+  position: absolute;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--yellow) 0%, var(--green) 100%);
+  opacity: 0.4;
+  animation: float 12s linear infinite;
 }
 @keyframes float {
-  0% { transform: translateY(0) translateX(0) scale(1); }
-  50% { transform: translateY(-120px) translateX(40px) scale(1.2); }
+  0%   { transform: translateY(0) translateX(0) scale(1); }
+  50%  { transform: translateY(-120px) translateX(40px) scale(1.2); }
   100% { transform: translateY(-240px) translateX(0) scale(1); }
 }
 
-/* SUMMARY BAR */
+/* ---------- SUMMARY ---------- */
 #summary {
-  display: flex; justify-content: center; flex-wrap: wrap;
-  gap: 1.4rem; color: #cdeac0; margin: 0.6rem auto 1.2rem;
-  text-align: center; z-index: 2; position: relative;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem 1.4rem;
+  margin: 0.6rem auto 1.2rem;
+  color: var(--muted);
+  text-align: center;
 }
-.summary-item { display: flex; align-items: center; gap: 8px;
-  font-size: clamp(1rem,1.9vw,1.4rem); font-weight: 600; }
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(1rem, 1.9vw, 1.4rem);
+  font-weight: 600;
+}
 .summary-icon {
-  width: clamp(22px,2.2vw,28px); height: clamp(22px,2.2vw,28px);
-  stroke: #ffda00; stroke-width: 2; stroke-linecap: round;
-  stroke-linejoin: round; fill: none;
+  width: clamp(22px, 2.2vw, 28px);
+  height: clamp(22px, 2.2vw, 28px);
+  stroke: var(--yellow);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  flex: none;
 }
-.summary-value b { color: #fff; font-weight: 700;
-  text-shadow: 0 0 4px rgba(255,255,255,0.2); }
+.summary-item b {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.2);
+}
 
-/* TEAMS GRID */
+/* Only ever visible when the poll is failing. */
+#link-warning {
+  display: none;
+  margin: -0.4rem auto 1rem;
+  color: var(--alert);
+  font-size: 0.9rem;
+  text-align: center;
+}
+#link-warning.show { display: block; }
+
+/* ---------- TEAMS ---------- */
+main { flex: 1; }
+
 #teams {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
@@ -94,236 +149,456 @@ header text {
   padding: 1rem;
   margin: 0 auto;
   max-width: 1600px;
-  box-sizing: border-box;
-}
-@media (max-width: 480px) {
-  #teams {
-    grid-template-columns: 1fr;
-    gap: 0.7rem;
-    padding: 0.6rem;
-  }
-  .team {
-    padding: 0.8rem;
-    min-height: 150px;
-  }
 }
 
 .team {
   position: relative;
-  background: rgba(0,104,55,0.9);
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  transition: transform .2s ease;
   overflow: hidden;
-  min-height: 180px;
+  padding: 1rem;
+  background: var(--card);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .team:hover { transform: translateY(-2px); }
 
 .team::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 6px;
-  background: linear-gradient(90deg,#00ff99,#ffda00,#00cc66);
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  opacity: .9;
-  z-index: 1;
+  background: linear-gradient(90deg, var(--green), var(--yellow), var(--green-mid));
+  opacity: 0.9;
 }
+/* Completed teams are marked by a gold edge and a tick, so the state reads
+   from the back of the room without needing a label. */
 .team.complete {
-  background: rgba(0,160,80,0.95);
-  border: 1px solid rgba(0,255,160,0.4);
-  box-shadow: 0 0 10px rgba(0,255,160,0.3);
+  background: var(--card-done);
+  border-color: rgba(255, 218, 0, 0.55);
+  box-shadow: 0 0 16px rgba(255, 218, 0, 0.18);
 }
-.team.complete { background: rgba(0,122,69,0.95); border: 1px solid rgba(0,204,102,0.4); }
-.team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .6rem; }
-.team h2 { margin: 0; font-size: 1.35rem; color: #ffda00; }
-.status-chip {
-  padding: 4px 10px; border-radius: 6px; font-size: .85rem; font-weight: 600;
-  text-transform: uppercase; background: rgba(255,255,255,0.08);
-}
-.status-chip.completed { color: #fff; background: rgba(0,204,102,0.25); }
-.status-chip.ready { color: #ffda00; background: rgba(255,218,0,0.15); box-shadow: 0 0 6px rgba(255,218,0,0.4); }
+.team.complete .tick { color: var(--yellow); }
 
-.metric-group {
-  background: rgba(255,255,255,0.04);
-  border-radius: 10px;
-  padding: .8rem;
+.team h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0.35rem 0 0.75rem;
+  font-size: 1.35rem;
+  color: var(--yellow);
+}
+.team h2 .label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tick {
+  flex: none;
+  color: var(--green);
+  font-size: 1.1rem;
+  visibility: hidden;
+}
+.team.complete .tick { visibility: visible; }
+
+.metrics {
   display: grid;
   grid-template-columns: 1fr auto;
-  row-gap: 6px;
   align-items: center;
+  row-gap: 6px;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
 }
 .metric-label { font-weight: 700; }
 .metric-value { text-align: right; font-weight: 600; }
+
 .bar {
   grid-column: 1 / 3;
-  width: 100%;
   height: 10px;
-  background: rgba(255,255,255,0.15);
+  margin: 3px 0 8px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 5px;
   overflow: hidden;
-  margin: 3px 0 8px;
-  border: 1px solid rgba(255,255,255,0.1);
 }
-.bar-fill { height: 100%; transition: width 0.6s ease-in-out; transform-origin: left center; background: #00cc66; width: 0; }
-.bar-fill.requests { background: #ffda00; }
+.bar:last-child { margin-bottom: 0; }
+.bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 4px;
+  background: var(--green-mid);
+  transition: width 0.6s ease-in-out, background 0.3s ease;
+}
+.bar-fill.words { background: linear-gradient(90deg, var(--green-mid), var(--green)); }
+.team.complete .bar-fill.words { background: linear-gradient(90deg, var(--green), var(--yellow)); }
+.bar-fill.requests { background: var(--yellow); }
+.bar-fill.requests.low { background: var(--alert); }
 
-/* FOOTER + LINKS */
-footer {
+/* ---------- EMPTY STATE ---------- */
+#empty {
+  max-width: 34rem;
+  margin: 3rem auto;
+  padding: 0 1rem;
   text-align: center;
-  color: #ccc;
+  color: var(--muted);
+}
+#empty strong {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 1.3rem;
+  color: var(--yellow);
+}
+#empty code {
+  display: block;
+  max-width: 100%;
+  margin-top: 1.2rem;
+  padding: 0.65rem 0.9rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  color: var(--yellow);
   font-size: 0.9rem;
-  margin-top: auto;
-  padding: 0.8rem 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+/* ---------- FOOTER ---------- */
+footer {
   position: sticky;
   bottom: 0;
-  background: rgba(0,75,43,0.9);
+  margin-top: auto;
+  padding: 0.8rem 1rem;
+  background: rgba(0, 75, 43, 0.92);
+  color: #ccc;
+  font-size: 0.9rem;
+  text-align: center;
 }
-footer a { color: #ffda00; text-decoration: none; }
+footer a { color: var(--yellow); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
 #docs-link {
   position: fixed;
-  bottom: 14px;
   right: 18px;
-  background: rgba(0,122,69,0.9);
-  color: #ffda00;
-  text-decoration: none;
+  bottom: 14px;
+  z-index: 50;
+  padding: 8px 14px;
+  background: rgba(0, 122, 69, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  color: var(--yellow);
   font-weight: 600;
   font-size: 0.95rem;
-  padding: 8px 14px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  transition: all 0.3s ease;
-  z-index: 50;
+  text-decoration: none;
+  transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
-#docs-link:hover { background:#00cc66;color:#fff;box-shadow:0 0 12px rgba(0,255,120,0.6); }
+#docs-link:hover {
+  background: var(--green-mid);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0, 255, 120, 0.6);
+}
+
+#burst { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+@media (max-width: 480px) {
+  #teams { grid-template-columns: 1fr; gap: 0.7rem; padding: 0.6rem; }
+  .team { padding: 0.8rem; }
+  #docs-link { position: static; display: inline-block; margin-top: 0.5rem; }
+}
 </style>
 </head>
 <body>
 
 <header>
-<div id="header-particles"></div>
-<svg class="title" viewBox="0 0 700 160">
-  <defs>
-    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#00ff99">
-        <animate attributeName="stop-color" values="#00ff99;#ffda00;#00cc66;#00ff99" dur="8s" repeatCount="indefinite"/>
-      </stop>
-      <stop offset="100%" stop-color="#ffda00">
-        <animate attributeName="stop-color" values="#ffda00;#00cc66;#00ff99;#ffda00" dur="8s" repeatCount="indefinite"/>
-      </stop>
-    </linearGradient>
-  </defs>
-  <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle">Decrypt the Narrative</text>
-  <g class="lines">
-    <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
-    <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
-    <line x1="260" y1="110" x2="340" y2="80" stroke="url(#flowGradient)" />
-    <line x1="340" y1="80" x2="420" y2="110" stroke="url(#flowGradient)" />
-    <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
-    <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
-  </g>
-  <g class="nodes">
-    <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
-    <circle cx="340" cy="80" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
-  </g>
-</svg>
+  <div id="header-particles"></div>
+  <svg class="title" viewBox="0 0 700 160" role="img" aria-label="Decrypt the Narrative">
+    <defs>
+      <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#00ff99">
+          <animate attributeName="stop-color" values="#00ff99;#ffda00;#00cc66;#00ff99" dur="8s" repeatCount="indefinite"/>
+        </stop>
+        <stop offset="100%" stop-color="#ffda00">
+          <animate attributeName="stop-color" values="#ffda00;#00cc66;#00ff99;#ffda00" dur="8s" repeatCount="indefinite"/>
+        </stop>
+      </linearGradient>
+    </defs>
+    <text x="50%" y="35%" text-anchor="middle" dominant-baseline="middle">Decrypt the Narrative</text>
+    <g class="lines">
+      <line x1="100" y1="110" x2="180" y2="80" stroke="url(#flowGradient)" />
+      <line x1="180" y1="80" x2="260" y2="110" stroke="url(#flowGradient)" />
+      <line x1="260" y1="110" x2="340" y2="80" stroke="url(#flowGradient)" />
+      <line x1="340" y1="80" x2="420" y2="110" stroke="url(#flowGradient)" />
+      <line x1="420" y1="110" x2="500" y2="80" stroke="url(#flowGradient)" />
+      <line x1="500" y1="80" x2="580" y2="110" stroke="url(#flowGradient)" />
+    </g>
+    <g class="nodes">
+      <circle cx="100" cy="110" r="4"/><circle cx="180" cy="80" r="4"/><circle cx="260" cy="110" r="4"/>
+      <circle cx="340" cy="80" r="4"/><circle cx="420" cy="110" r="4"/><circle cx="500" cy="80" r="4"/><circle cx="580" cy="110" r="4"/>
+    </g>
+  </svg>
 </header>
 
 <div id="summary">
-  <div class="summary-item"><svg class="summary-icon" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="15" cy="9" r="3"/><path d="M4 20a7 7 0 0 1 16 0"/></svg><span>Teams:</span><span id="count-teams"><b>0</b></span></div>
-  <div class="summary-item"><svg class="summary-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg><span>Tokens:</span><span id="count-tokens"><b>0</b></span></div>
-  <div class="summary-item"><svg class="summary-icon" viewBox="0 0 24 24"><path d="M13 2l-1 6h-1l-1-6M5 8l2 4-2 4m14 0l-2-4 2-4"/></svg><span>Chaos:</span><span id="count-chaos"><b>0</b></span></div>
-  <div class="summary-item"><svg class="summary-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6l4 6-4 6"/></svg><span>Completed:</span><span id="count-completed"><b>0</b></span></div>
+  <div class="summary-item">
+    <svg class="summary-icon" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="15" cy="9" r="3"/><path d="M4 20a7 7 0 0 1 16 0"/></svg>
+    <span>Teams:</span><span><b id="count-teams">0</b></span>
+  </div>
+  <div class="summary-item">
+    <svg class="summary-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>
+    <span>Tokens:</span><span><b id="count-tokens">0</b></span>
+  </div>
+  <div class="summary-item">
+    <svg class="summary-icon" viewBox="0 0 24 24"><path d="M13 2l-1 6h-1l-1-6M5 8l2 4-2 4m14 0l-2-4 2-4"/></svg>
+    <span>Chaos:</span><span><b id="count-chaos">0</b></span>
+  </div>
+  <div class="summary-item">
+    <svg class="summary-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6l4 6-4 6"/></svg>
+    <span>Completed:</span><span><b id="count-completed">0</b></span>
+  </div>
 </div>
 
-<div id="teams"></div>
-<a id="docs-link" href="/docs" target="_blank">API Docs ↗</a>
-<footer>Designed by <a href="https://adamdavis.co.uk" target="_blank">Adam Davis</a></footer>
+<div id="link-warning"></div>
+
+<main>
+  <div id="teams"></div>
+  <div id="empty">
+    <strong>Waiting for teams</strong>
+    No active tokens yet. The board fills in as soon as a team authenticates.
+    <code>curl -X POST https://dcrypt.run/auth -H "team: your-team"</code>
+  </div>
+</main>
+
+<a id="docs-link" href="/docs" target="_blank" rel="noopener">API Docs ↗</a>
+<footer>Designed by <a href="https://adamdavis.co.uk" target="_blank" rel="noopener">Adam Davis</a></footer>
+<canvas id="burst"></canvas>
 
 <script>
-/* Floating particles */
-const field=document.getElementById("header-particles");
-const particles=[];
-const particleCount=25;
-for(let i=0;i<particleCount;i++){
-  const p=document.createElement("div");
-  p.className="particle";
-  resetParticle(p,true);
-  field.appendChild(p);
-  particles.push(p);
-}
-function resetParticle(p,init=false){
-  p.style.left=Math.random()*100+"%";
-  p.style.top=init?(Math.random()*100)+"%":"100%";
-  p.style.animationDuration=10+Math.random()*6+"s";
-}
-function recycle(){
-  for(const p of particles){
-    const top=parseFloat(p.style.top);
-    if(top<-5){resetParticle(p);}
-    else{p.style.top=(top-0.2)+"%";}
-  }
-  requestAnimationFrame(recycle);
-}
-recycle();
+"use strict";
 
-/* Update Dashboard */
-function formatDuration(sec){
-  if(!sec) return "-";
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = Math.floor(sec % 60);
-  if(h > 0) return `${h}h ${m}m ${s}s`;
-  if(m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
-}
-async function fetchStatus(){
-  try{
-    const res=await fetch("/status",{cache:"no-store"});
-    const data=await res.json();
-    const teams=data.teams||[];
-    document.getElementById("count-teams").innerHTML=`<b>${teams.length}</b>`;
-    document.getElementById("count-tokens").innerHTML=`<b>${teams.reduce((s,t)=>s+(t.tokens_issued||0),0)}</b>`;
-    document.getElementById("count-chaos").innerHTML=`<b>${data.total_chaos||0}</b>`;
-    document.getElementById("count-completed").innerHTML=`<b>${teams.filter(t=>t.completed).length}</b>`;
-    const container=document.getElementById("teams");container.innerHTML="";
-    const totalWords=data.total_words||50;
-    const TOKEN_LIMIT=20; // match backend
-    teams.sort((a, b) => {
-      if (a.completed && !b.completed) return -1;
-      if (!a.completed && b.completed) return 1;
-      return b.seen_count - a.seen_count;
-    });
-    for(const t of teams){
-      const seenPercent=Math.min((t.seen_count/totalWords)*100,100);
-      const remainingPercent=Math.max((t.remaining/TOKEN_LIMIT)*100,0);
-      const chipClass=t.completed?"completed":(seenPercent>=99?"ready":"");
-      const chipLabel=t.completed?"Completed":(seenPercent>=99?"Ready":"Active");
-      const card=document.createElement("div");
-      card.className="team"+(t.completed?" complete":"");
-      card.innerHTML=`
-        <div class="team-header"><h2>${t.team}</h2><div class="status-chip ${chipClass}">${chipLabel}</div></div>
-        <div class="metric-group">
-          <div class="metric-label">Seen</div><div class="metric-value">${seenPercent.toFixed(0)}%</div>
-          <div class="bar"><div class="bar-fill seen" style="width:${seenPercent}%"></div></div>
-          <div class="metric-label">Requests</div><div class="metric-value">${t.remaining}</div>
-          <div class="bar"><div class="bar-fill requests" style="width:${remainingPercent}%"></div></div>
-          <div class="metric-label">Chaos</div><div class="metric-value">${t.chaos||0}</div>
-          <div class="metric-label">Duration</div><div class="metric-value">${formatDuration(t.duration)}</div>
-        </div>`;
-      container.appendChild(card);
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Floating particles ---------- */
+(function particles() {
+  if (reduceMotion) return;
+  const field = document.getElementById("header-particles");
+  const items = [];
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement("div");
+    p.className = "particle";
+    reset(p, true);
+    field.appendChild(p);
+    items.push(p);
+  }
+  function reset(p, init) {
+    p.style.left = Math.random() * 100 + "%";
+    p.style.top = init ? Math.random() * 100 + "%" : "100%";
+    p.style.animationDuration = 10 + Math.random() * 6 + "s";
+  }
+  (function recycle() {
+    for (const p of items) {
+      const top = parseFloat(p.style.top);
+      if (top < -5) reset(p, false);
+      else p.style.top = top - 0.2 + "%";
     }
-  }catch(e){console.error(e);}
+    requestAnimationFrame(recycle);
+  })();
+})();
+
+/* ---------- Confetti on a new completion ---------- */
+const burst = (function () {
+  const canvas = document.getElementById("burst");
+  const ctx = canvas.getContext("2d");
+  const COLOURS = ["#ffda00", "#00ff99", "#00cc66", "#ffffff"];
+  let bits = [];
+  let running = false;
+
+  function resize() {
+    canvas.width = innerWidth * devicePixelRatio;
+    canvas.height = innerHeight * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  function tick() {
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (const b of bits) {
+      b.vy += 0.16;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.spin += b.dspin;
+      b.life--;
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.spin);
+      ctx.globalAlpha = Math.max(0, Math.min(1, b.life / 40));
+      ctx.fillStyle = b.colour;
+      ctx.fillRect(-b.size / 2, -b.size / 4, b.size, b.size / 2);
+      ctx.restore();
+    }
+    bits = bits.filter((b) => b.life > 0 && b.y < innerHeight + 40);
+    if (bits.length) requestAnimationFrame(tick);
+    else { running = false; ctx.clearRect(0, 0, innerWidth, innerHeight); }
+  }
+
+  return function fire(count) {
+    if (reduceMotion) return;
+    for (let i = 0; i < count; i++) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.8;
+      const speed = 7 + Math.random() * 12;
+      bits.push({
+        x: innerWidth / 2 + (Math.random() - 0.5) * 240,
+        y: innerHeight * 0.7,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 6 + Math.random() * 7,
+        spin: Math.random() * 6.28,
+        dspin: (Math.random() - 0.5) * 0.3,
+        life: 85 + Math.random() * 55,
+        colour: COLOURS[(Math.random() * COLOURS.length) | 0],
+      });
+    }
+    if (!running) { running = true; requestAnimationFrame(tick); }
+  };
+})();
+
+/* ---------- Helpers ---------- */
+function formatDuration(sec) {
+  if (!sec || sec < 0) return "0s";
+  const s = Math.floor(sec % 60);
+  const m = Math.floor((sec % 3600) / 60);
+  const h = Math.floor(sec / 3600);
+  if (h) return h + "h " + m + "m";
+  if (m) return m + "m " + s + "s";
+  return s + "s";
 }
-setInterval(fetchStatus,1500);
-fetchStatus();
+
+/* ---------- Cards ----------
+   Cards are cached per team and updated in place. Rebuilding the grid on
+   every poll would restart each bar transition 40 times a minute.        */
+const cards = new Map();
+const container = document.getElementById("teams");
+const emptyState = document.getElementById("empty");
+let knownComplete = new Set();
+let firstPaint = true;
+
+function buildCard() {
+  const el = document.createElement("article");
+  el.className = "team";
+  el.innerHTML =
+    '<h2><span class="tick">&#10003;</span><span class="label"></span></h2>' +
+    '<div class="metrics">' +
+      '<div class="metric-label">Words</div><div class="metric-value words-text"></div>' +
+      '<div class="bar"><div class="bar-fill words"></div></div>' +
+      '<div class="metric-label">Requests</div><div class="metric-value requests-text"></div>' +
+      '<div class="bar"><div class="bar-fill requests"></div></div>' +
+      '<div class="metric-label">Chaos</div><div class="metric-value chaos-text"></div>' +
+      '<div class="metric-label">Duration</div><div class="metric-value duration-text"></div>' +
+    '</div>';
+  el.refs = {
+    label: el.querySelector(".label"),
+    wordsText: el.querySelector(".words-text"),
+    words: el.querySelector(".bar-fill.words"),
+    requestsText: el.querySelector(".requests-text"),
+    requests: el.querySelector(".bar-fill.requests"),
+    chaos: el.querySelector(".chaos-text"),
+    duration: el.querySelector(".duration-text"),
+  };
+  return el;
+}
+
+function render(data) {
+  const teams = Array.isArray(data.teams) ? data.teams : [];
+  const totalWords = data.total_words || 1;
+
+  document.getElementById("count-teams").textContent = teams.length;
+  document.getElementById("count-tokens").textContent =
+    teams.reduce((n, t) => n + (t.tokens_issued || 0), 0);
+  document.getElementById("count-chaos").textContent = data.total_chaos || 0;
+  document.getElementById("count-completed").textContent =
+    teams.filter((t) => t.completed).length;
+
+  // Finished first and fastest, then whoever has recovered the most words.
+  teams.sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? -1 : 1;
+    if (a.completed && b.completed) return a.duration - b.duration;
+    return (b.unique_seen || 0) - (a.unique_seen || 0);
+  });
+
+  emptyState.style.display = teams.length ? "none" : "";
+
+  const live = new Set();
+  for (const t of teams) {
+    const key = String(t.team);
+    live.add(key);
+
+    let el = cards.get(key);
+    if (!el) {
+      el = buildCard();
+      cards.set(key, el);
+      // textContent, never innerHTML: team names are arbitrary user input
+      // and this board goes on a projector.
+      el.refs.label.textContent = key;
+    }
+
+    const seen = t.unique_seen || 0;
+    const quotaMax = t.max || 20;
+    const words = Math.max(0, Math.min(100, (seen / totalWords) * 100));
+    const quota = Math.max(0, Math.min(100, ((t.remaining || 0) / quotaMax) * 100));
+
+    el.className = "team" + (t.completed ? " complete" : "");
+    el.refs.wordsText.textContent = seen + " / " + totalWords;
+    el.refs.words.style.width = words + "%";
+    el.refs.requestsText.textContent = (t.remaining || 0) + " / " + quotaMax;
+    el.refs.requests.style.width = quota + "%";
+    el.refs.requests.classList.toggle("low", quota <= 25);
+    el.refs.chaos.textContent = t.chaos || 0;
+    el.refs.duration.textContent = formatDuration(t.duration);
+
+    // Re-appending an existing node moves it, which is the reorder.
+    container.appendChild(el);
+  }
+
+  for (const [key, el] of cards) {
+    if (!live.has(key)) { el.remove(); cards.delete(key); }
+  }
+
+  // Celebrate new completions, but not on first paint — reloading the page
+  // mid-event should not re-fire every win.
+  const complete = new Set(teams.filter((t) => t.completed).map((t) => String(t.team)));
+  if (!firstPaint) {
+    let fresh = 0;
+    for (const team of complete) if (!knownComplete.has(team)) fresh++;
+    if (fresh) burst(80 * Math.min(fresh, 3));
+  }
+  knownComplete = complete;
+  firstPaint = false;
+}
+
+/* ---------- Polling ---------- */
+const warning = document.getElementById("link-warning");
+let lastGoodPoll = 0;
+
+async function poll() {
+  try {
+    const res = await fetch("/status", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    render(await res.json());
+    lastGoodPoll = Date.now();
+    warning.classList.remove("show");
+  } catch (err) {
+    // The board itself has to survive a flaky server — a poor advert for a
+    // resilience challenge otherwise.
+    const stale = lastGoodPoll ? Math.round((Date.now() - lastGoodPoll) / 1000) : null;
+    warning.textContent = stale === null
+      ? "Cannot reach the server — retrying."
+      : "Connection lost — last update " + stale + "s ago.";
+    warning.classList.add("show");
+  }
+}
+
+poll();
+setInterval(poll, 1500);
 </script>
 </body>
 </html>

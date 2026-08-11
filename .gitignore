@@ -1,0 +1,24 @@
+# The narrative and any captured state must never be committed.
+.env
+.env.*
+state.json
+*.state.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local agent config
+.claude/settings.local.json
