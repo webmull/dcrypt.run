@@ -196,7 +196,11 @@ room:
   update, rather than freezing on stale numbers or going blank. A resilience
   challenge whose own scoreboard falls over is a bad look.
 - No CDN dependencies. Nothing to fail at the worst possible moment.
-- `prefers-reduced-motion` is respected.
+- Motion is deliberately **not** gated on `prefers-reduced-motion`. The board
+  exists to be glanced at across a room, and the animation is part of how it
+  reads; a machine-level accessibility setting on the presenting laptop is the
+  wrong signal for that. Worth revisiting if it ever becomes a page people sit
+  and browse.
 
 ---
 

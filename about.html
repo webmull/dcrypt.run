@@ -32,7 +32,10 @@
 
 body {
   margin: 0;
+  /* See dashboard.html: 100vh makes the document taller than the visible
+     viewport on iOS, leaving a strip of body green below the footer. */
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
@@ -41,12 +44,6 @@ body {
   flex-direction: column;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pulse.trail { display: none; }
-  .pulse { animation: none; stroke-dasharray: none; opacity: 0.95; }
-  .nodes circle { animation: none; opacity: 0.95; }
 }
 
 /* ---------- TOP NAV ---------- */
@@ -320,6 +317,27 @@ footer {
 }
 .footer-links a:hover { color: var(--yellow); }
 .footer-links svg { width: 1.05em; height: 1.05em; fill: currentColor; flex: none; }
+
+/* Matches the scoreboard: stack and centre rather than wrapping ragged-left. */
+@media (max-width: 40rem) {
+  footer {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 0.85rem;
+    padding-bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  }
+  .footer-cred { justify-content: center; }
+  .footer-links {
+    width: 100%;
+    justify-content: center;
+    gap: 0.4rem 1.3rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+  }
+  .footer-links a { padding: 0.2rem 0; }
+  .topnav { font-size: 0.88rem; }
+}
 </style>
 </head>
 <body>

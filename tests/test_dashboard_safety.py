@@ -71,16 +71,12 @@ def test_handles_a_failed_poll(source):
     assert "Connection lost" in source
 
 
-def test_respects_reduced_motion(source):
-    assert "prefers-reduced-motion" in source
-
-
-def test_reduced_motion_does_not_blanket_disable_animation(source):
-    """A blanket `*` override flattened the header to a static logo, including
-    the colour glow, which is not movement and not what the setting asks for."""
-    block = source.split("prefers-reduced-motion: reduce)")[1].split("}\n}")[0]
-    assert "*, *::before" not in block
-    assert "animation-duration: 0.001s" not in source
+def test_animation_is_deliberately_unconditional(source):
+    """The board is a projected display, where the motion is part of the point,
+    so it is not gated on prefers-reduced-motion. This is a product decision
+    rather than an oversight — worth revisiting if this ever becomes a page
+    people sit and browse rather than glance at across a room."""
+    assert "prefers-reduced-motion" not in source
 
 
 def test_all_three_team_states_are_represented(source):
