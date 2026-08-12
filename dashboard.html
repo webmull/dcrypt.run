@@ -472,6 +472,10 @@ footer {
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem 1.5rem;
+  /* Paint the footer colour below itself. iOS fills the rubber-band overscroll
+     area from the page canvas, which is the lighter body green, so without this
+     a strip of it shows under the footer when you pull past the bottom. */
+  box-shadow: 0 50vh 0 rgba(0, 60, 34, 0.94);
 }
 
 .footer-cred {
@@ -515,10 +519,38 @@ footer {
 
 #burst { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
 
-/* Narrow screens: `space-between` wraps the footer into two ragged rows shoved
-   against the left edge, so stack and centre instead, and keep clear of the iOS
-   home indicator. */
 @media (max-width: 40rem) {
+  /* Clear the notch / status bar. */
+  header { padding-top: env(safe-area-inset-top, 0px); margin-top: 0.5rem; }
+
+  /* The panel was running edge to edge, cutting off its own rounded corners. */
+  #empty {
+    margin: 1.25rem 1rem;
+    padding: 1.4rem 1.1rem;
+  }
+
+  /* Horizontally the three calls wrap to two lines and orphan an arrow, so
+     stack them into a vertical pipeline and turn the arrows to match. */
+  .flow {
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 1.2rem 0 1rem;
+  }
+  .flow span { width: 100%; max-width: 14rem; }
+  .flow i { transform: rotate(90deg); line-height: 1; }
+
+  /* Side by side, COPY becomes a tall slab beside three wrapped lines. */
+  .cmd { flex-direction: column; }
+  .cmd code { text-align: center; }
+  .cmd button {
+    width: 100%;
+    padding: 0.6rem;
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  /* `space-between` wraps the footer into two ragged rows shoved against the
+     left edge, so stack and centre, and keep clear of the home indicator. */
   footer {
     flex-direction: column;
     justify-content: center;
